@@ -10,12 +10,9 @@ from setuptools import setup, find_packages
 # To use a consistent encoding
 from distutils.core import Extension
 from distutils.sysconfig import get_python_lib
+# Adding support for accessing  non-package data runtime
 import os
 
-csgraph_ext = Extension('extensions', sources=['extensions/csgraph.c'],
-        extra_compile_args=['-std=c99'],
-        include_dirs=[os.path.join(get_python_lib(0), 'numpy/core/include')],
-        define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')])
 
 setup(
     name='symlearn',
@@ -28,7 +25,7 @@ setup(
     description='A simple Toy Deep Learning Package',
 
     # The project's main homepage.
-    url='https://github.com/renewang/symlearn',
+    url='https://github.com/renewang/Symlearn',
 
     # Author details
     author='Rene Wang',
@@ -64,10 +61,10 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(include=('utils',), exclude=('recursnn', 'csgraph')),
+    packages=find_packages(include=('utils',)),
 
     # scripts 
-    scripts=['scripts/run_naive_bayes.py'],
+    scripts=[],
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
@@ -89,7 +86,8 @@ setup(
     # have to be included in MANIFEST.in as well.
     package_data={
     },
-
+    # exclude README.txt from all packages which exists for the github 
+    exclude_package_data={'': ['README.txt']},
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:
     # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files # noqa
@@ -100,10 +98,7 @@ setup(
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
-        'console_scripts': [
-        ],
+        'console_scripts': [],
+        'gui_scripts': [],
     },
-
-    # Setup for extension modules
-    # ext_modules=[csgraph_ext]
 )
