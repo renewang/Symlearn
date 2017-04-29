@@ -37,7 +37,7 @@ scikit-learn==0.18.1
 scipy==0.18.1
 simplegeneric==0.8.1
 six==1.10.0
--e git+git@github.com:renewang/symlearn.git@0b3bde0317c6e2cfb2f266e6ba8de6d4140afd22#egg=symlearn&subdirectory=../../../symlearn/Symlearn
+-e git+https@github.com:renewang/symlearn.git@0b3bde0317c6e2cfb2f266e6ba8de6d4140afd22#egg=symlearn&subdirectory=../../../symlearn/Symlearn
 terminado==0.6
 testpath==0.3
 tornado==4.5.1
