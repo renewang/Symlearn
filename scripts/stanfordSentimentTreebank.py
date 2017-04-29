@@ -16,8 +16,6 @@ import os
 
 version ='3.6.0'
 data_dir = os.path.join(os.getenv('DATADIR', default='..'), 'data')
-treebank_dir = os.path.join(os.getenv('WORKSPACE'),
-        'Kaggle','stanford_parser','stanfordSentimentTreebank');
 parser_path = os.path.join(os.getenv('HOME'),
         '.m2','repository','edu','stanford','nlp','stanford-corenlp', version)
 
@@ -149,7 +147,8 @@ class StanfordPCFGParser(stf.GenericStanfordParser):
     """
     a overriding class to provide flexible interface for parsing
     """
-    
+    treebank_dir = os.path.join(os.getenv('WORKSPACE'),
+        'Kaggle','stanford_parser','stanfordSentimentTreebank')
     def __init__(self, **kwargs):
         super(__class__, self).__init__(**kwargs)
 
