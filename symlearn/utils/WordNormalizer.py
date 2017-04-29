@@ -6,7 +6,7 @@ from nltk.stem.porter import PorterStemmer
 
 from functools import partial
 
-from utils import VocabularyDict
+from symlearn.utils import VocabularyDict
 
 import numpy
 import re

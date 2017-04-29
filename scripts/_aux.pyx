@@ -6,7 +6,7 @@ from sklearn.feature_extraction.dict_vectorizer import DictVectorizer
 
 from copy import deepcopy
 from itertools import groupby
-from utils import VocabularyDict
+from symlearn.utils import VocabularyDict
 from operator import itemgetter
 
 from stanfordSentimentTreebank import preprocess_data
