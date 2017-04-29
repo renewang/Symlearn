@@ -147,11 +147,7 @@ class StanfordPCFGParser(stf.GenericStanfordParser):
     """
     a overriding class to provide flexible interface for parsing
     """
-<<<<<<< HEAD
-    treebank_dir = os.path.join(os.getenv('WORKSPACE'),
-=======
-    treebank_dir = os.path.join(os.getenv('WORKSPACE', default='..'),
->>>>>>> adding missing files
+    treebank_dir = os.path.join(os.getenv('WORKSPACE', default='.'),
         'Kaggle','stanford_parser','stanfordSentimentTreebank')
     def __init__(self, **kwargs):
         super(__class__, self).__init__(**kwargs)
