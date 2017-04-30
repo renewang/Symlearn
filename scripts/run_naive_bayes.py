@@ -67,7 +67,8 @@ class RestrictedUnpickler(NumpyUnpickler):
         import pickle, sys
         # Only allow safe classes from builtins.
         if not (module in globals() or module in sys.modules):
-            if name in ['count_vectorizer', 'WordNormalizer', 'VocabularyDict']:
+            if name in ['count_vectorizer', 'WordNormalizer', 'VocabularyDict',
+            'construct_score', 'inspect_and_bind']:
                 logging.warn('skipping importing rquired module %s because not found' % module)
                 module = 'symlearn.utils'
             else:
