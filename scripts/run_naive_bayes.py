@@ -69,7 +69,7 @@ class RestrictedUnpickler(NumpyUnpickler):
         if not (module in globals() or module in sys.modules):
             if name in ['count_vectorizer', 'WordNormalizer']:
                 logging.warn('skipping importing rquired module %s because not found' % module)
-                module = 'utils'
+                module = 'symlearn.utils'
             else:
                 raise pickle.UnpicklingError("global '%s.%s' is forbidden" %
                     (module, name))
