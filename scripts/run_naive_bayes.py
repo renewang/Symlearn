@@ -721,7 +721,7 @@ def process_word_features(csv_file, **kwargs):
 
 
 def run_single_classifier(csv_file, cvkwargs, gridkwargs, **kwargs):
-    max_level = kwargs.pop('max_level')
+    batch_mode = kwargs.pop('batch_mode', False)
     n_rows = kwargs.pop('n_rows', -1)
     use_ensemble = kwargs.pop('use_ensemble', False)
     pre_split = kwargs.pop('predefine', False)
@@ -791,9 +791,13 @@ def run_single_classifier(csv_file, cvkwargs, gridkwargs, **kwargs):
     if(hasattr(tree_clf, 'steps')):
         logging.info('tree classifier has nodes {}'.format(
             tree_clf.steps[-1][-1].tree_.node_count))
+
+    if batch_mode:
+        return (learning_res, numpy.mean(predictions == test_targets))
+
     joblib.dump((tree_clf, vectorizer, preproc, (train_features, train_targets), 
-        (valid_features, valid_targets), (test_features, test_targets)), 
-        os.path.join(data_dir, model_name))
+            (valid_features, valid_targets), (test_features, test_targets)), 
+            os.path.join(data_dir, model_name))
     logging.info('dumping {}'.format(model_name))
 
 
