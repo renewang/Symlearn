@@ -972,7 +972,7 @@ def main(*args):
     elif args.subcommand.startswith('m'):
         logging.info("start using naive bayes + decision tree to predict"
                 " sentiment file: %s", args.file)
-        cvkws = {'n_splits': 3, 'random_state': args.seed} # used to create the same partition
+        cvkws = {'n_splits': 10, 'random_state': args.seed} # used to create the same partition
         gridkws = {'scoring': 'accuracy', 'verbose': 10, 
                    'n_jobs': 2, 'refit': True}
         run_multi_classifiers(os.path.join(data_dir, args.file),
