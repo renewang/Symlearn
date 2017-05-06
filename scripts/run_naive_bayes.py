@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import make_scorer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_is_fitted, _num_samples
 from sklearn.base import clone 
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
 from sklearn.ensemble import ExtraTreesClassifier
@@ -53,7 +53,7 @@ except:
 FORMAT='%(asctime)s:%(levelname)s:%(threadName)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s'
 logging.captureWarnings(True)
 logging.basicConfig(format=FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logging.DEBUG, handlers=[logging.StreamHandler()])
+        level=logging.INFO, handlers=[logging.StreamHandler()])
 
 data_dir = os.path.join(os.getenv('DATADIR', default='..'), 'data')
 
@@ -82,16 +82,27 @@ def construct_random_ensemble(**kwargs):
     """
     create an bootstrap-based ensemble 
     """
-    params = {'n_estimators': 30,         # number of estimators used 
+    params = {'n_estimators': 30,               # number of estimators used 
               'criterion'   : 'entropy',
-              'bootstrap'   : True,       # indicates if using boostrap sample
-              'oob_score'   : True,       # indicates if using out of bag
-                                          # sample
-                                          # out of bag estimation
-              'verbose'     : 10,         # verbosity on training
-              'warm_start'  : False,      # indicates if using the previous
-                                          # result to for new samples    
-              'n_jobs'      : 2           # how many parallel jobs             
+              'max_features' : 'auto',          # the maximal features for a best split
+              'max_depth': None,                # the max depth for tree: None for splitting till all leaves are pure
+                                                # this can work with the min_sample_split and turn off 
+                                                # if max_leaf_node is not None
+              'min_samples_split': 100,         # the minimal number of samples to split a node
+              'min_samples_leaf': 100,          # the minimal sample required to be in leaf node
+              'min_weight_fraction_leaf': 0.05, # the fraction of samples required to be in the leaf
+              'max_leaf_nodes': None,           # the maximal number of leaf nodes to be grown
+              'min_impurity_split': 1e-7,       # the threshold of impurity for early stopping
+              'class_weight': 'balanced',       # the weight to balance target classes
+              'random_state': None,             # random seed
+              'bootstrap'   : True,             # indicates if using boostrap sample
+              'oob_score'   : True,             # indicates if using out of bag
+                                                # sample
+                                                # out of bag estimation
+              'verbose'     : 10,               # verbosity on training
+              'warm_start'  : False,            # indicates if using the previous
+                                                # result to for new samples    
+              'n_jobs'      : 2                 # how many parallel jobs             
             }
     sig = inspect.signature(ExtraTreesClassifier)
     params.update({k: v for k, v in kwargs.items() if k in sig.parameters})
@@ -202,8 +213,9 @@ def construct_decision_tree(**kwargs):
                 'max_leaf_nodes': None,           # the maximal number of leaf nodes to be grown
                 'class_weight': 'balanced',       # the weight to balance target classes
                 'random_state': None,             # random seed
-                'presort'     : 'auto'            # indicates if using sorting
+                'presort'     : 'auto',           # indicates if using sorting
                                                   # to speed up
+                'min_impurity_split': 1e-7        # the threshold of impurity for early stopping
                }
     tree_kws.update(kwargs)
     tree_ba = inspect_and_bind(DecisionTreeClassifier, **tree_kws)
@@ -792,11 +804,14 @@ def run_single_classifier(csv_file, cvkwargs, gridkwargs, **kwargs):
         logging.info('tree classifier has nodes {}'.format(
             tree_clf.steps[-1][-1].tree_.node_count))
 
+    final_result = (learning_res, numpy.mean(predictions == test_targets))
     if batch_mode:
-        return (learning_res, numpy.mean(predictions == test_targets))
+        return final_result
 
-    joblib.dump((tree_clf, vectorizer, preproc, (train_features, train_targets), 
-            (valid_features, valid_targets), (test_features, test_targets)), 
+    joblib.dump((tree_clf, vectorizer, preproc, final_result, 
+        (train_features, train_targets), 
+        (valid_features, valid_targets), 
+        (test_features, test_targets)), 
             os.path.join(data_dir, model_name))
     logging.info('dumping {}'.format(model_name))
 
@@ -805,6 +820,10 @@ def run_multi_classifiers(csv_file, cvkwargs, gridkwargs, **kwargs):
     """
     two-tiered classifiers
     """
+    from sklearn.model_selection import _search
+    from unittest.mock import patch 
+
+    batch_mode = kwargs.pop('batch_mode', False)
     max_level = kwargs.pop('max_level')
     pre_split = kwargs.pop('predefine', False)
     seed = kwargs.pop('random_state', None)
@@ -833,7 +852,7 @@ def run_multi_classifiers(csv_file, cvkwargs, gridkwargs, **kwargs):
     vectorizer = DictVectorizer(sparse=True)
     classifier = Pipeline(
         [('transformer', None),
-         ('classifier', classifier_maker(**kwargs))])
+         ('classifier', None)])
 
     # iterate different label_predictors (pre-trained with different parameters)
     transformers = []
@@ -857,11 +876,17 @@ def run_multi_classifiers(csv_file, cvkwargs, gridkwargs, **kwargs):
         gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})        
     
     # tuning the ensemble of classifiers and then refit with all training data
-    searcher = GridSearchCV(classifier, {'transformer': transformers}, **gridkwargs)
-    searcher.fit(pandas.concat([train_features, valid_features]), 
-        numpy.hstack([train_targets, valid_targets]))
+    with patch.object(_search, '_fit_and_score',  new_callable=_fit_and_score):
+        params_grid = {'transformer': transformers, 'classifier': [classifier_maker(**kwargs)]}
+        searcher = _search.GridSearchCV(classifier, params_grid, **gridkwargs)
+        searcher.fit(pandas.concat([train_features, valid_features]), 
+            numpy.hstack([train_targets, valid_targets]))
+    test_score = searcher.score(test_features, test_targets)
     logging.info('completing fitting and test on test set with {} accuracy'.format(
-                searcher.score(test_features, test_targets)))
+                test_score))
+    final_result = (searcher, label_searchers)
+    if batch_mode:
+        return (final_result, test_score)
     joblib.dump((searcher, vectorizer, preproc, label_searchers, \
         (train_features, train_targets), (valid_features, valid_targets), \
         (test_features, test_targets)), os.path.join(data_dir, model_name))
@@ -972,7 +997,7 @@ def main(*args):
     elif args.subcommand.startswith('m'):
         logging.info("start using naive bayes + decision tree to predict"
                 " sentiment file: %s", args.file)
-        cvkws = {'n_splits': 10, 'random_state': args.seed} # used to create the same partition
+        cvkws = {'n_splits': 3, 'random_state': args.seed} # used to create the same partition
         gridkws = {'scoring': 'accuracy', 'verbose': 10, 
                    'n_jobs': 2, 'refit': True}
         run_multi_classifiers(os.path.join(data_dir, args.file),
