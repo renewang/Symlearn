@@ -8,6 +8,7 @@ import os
 import gc
 
 from run_naive_bayes import run_single_classifier, data_dir
+
 csvfile = os.path.join(data_dir, 'treebased_phrases.csv')
 cvkws = {'n_splits': 10, 'random_state': None}
 gridkws = {'scoring': 'accuracy', 'verbose': 0}

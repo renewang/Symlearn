@@ -5,10 +5,12 @@ import pathlib
 import numpy
 import re
 import os
+import gc
 
 from run_naive_bayes import run_multi_classifiers, data_dir
+
 csvfile = os.path.join(data_dir, 'treebased_phrases.csv')
-cvkws = {'n_splits': 3, 'random_state': None}
+cvkws = {'n_splits': 10, 'random_state': None}
 gridkws = {'scoring': 'accuracy', 'verbose': 0}
 
 if __name__ == '__main__':
