@@ -11,7 +11,7 @@ from run_naive_bayes import run_multi_classifiers, data_dir
 
 csvfile = os.path.join(data_dir, 'treebased_phrases.csv')
 cvkws = {'n_splits': 10, 'random_state': None}
-gridkws = {'scoring': 'accuracy', 'verbose': 0}
+gridkws = {'scoring': 'accuracy', 'verbose': 0, 'n_jobs': 1}
 
 if __name__ == '__main__':
     import sys 
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     with concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor:
         exec_res = [executor.submit(run_multi_classifiers, csvfile, cvkws, gridkws,
                     predefine=True, n_rows=-1, use_ensemble=False,
-                    random_state=None, max_level=i, batch_mode=True) for i in exp_levels]
+                    random_state=None, max_level=i, batch_mode=True, n_jobs=1) for i in exp_levels]
         exec_dec = []
         for future in concurrent.futures.as_completed(exec_dec):
             print("decision tree multi-classifier worker status:", future.done(), "test accruacy:", future.result()[-1])
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     with concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor:
         exec_res = [executor.submit(run_multi_classifiers, csvfile, cvkws, gridkws,
                     predefine=False, n_rows=-1, use_ensemble=True,
-                    random_state=None, max_level=i, batch_mode=True) for i in exp_levels]
+                    random_state=None, max_level=i, batch_mode=True, n_jobs=1) for i in exp_levels]
         exec_ens = []
         for future in concurrent.futures.as_completed(exec_res):
             print("ensemble multi-classifier worker status:", future.done(), "test accruacy:", future.result()[-1])
