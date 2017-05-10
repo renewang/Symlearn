@@ -99,7 +99,7 @@ def construct_random_ensemble(**kwargs):
               'oob_score'   : True,             # indicates if using out of bag
                                                 # sample
                                                 # out of bag estimation
-              'verbose'     : 10,               # verbosity on training
+              'verbose'     : 0,                # verbosity on training
               'warm_start'  : False,            # indicates if using the previous
                                                 # result to for new samples    
               'n_jobs'      : 2                 # how many parallel jobs             
