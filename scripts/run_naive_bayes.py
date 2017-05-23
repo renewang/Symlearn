@@ -11,7 +11,7 @@ from sklearn.feature_extraction import DictVectorizer
 from sklearn.utils.validation import check_is_fitted, _num_samples
 from sklearn.base import clone 
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
-from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier
 
 from contextlib import contextmanager
 from functools import partial
@@ -112,7 +112,7 @@ def construct_random_ensemble(**kwargs):
 
 def construct_boost_ensemble(**kwargs):
     """
-    create an adaboost-based ensemble 
+    create an gradient-based ensemble 
     """
     params = {'loss'         : 'deviance',         # loss function: "deviance" is
                                                    # cross-entropy used in logistic
@@ -610,10 +610,16 @@ def construct_multiple_classifiers(preproc, train_features, train_targets,
         'classifier__priors': [scipy.stats.dirichlet(alpha=numpy.ones(n_classes))]
         })
 
+  # ensure refit is not True
+  if 'refit' not in gridkwargs or gridkwargs['refit']:
+    gridkwargs['refit'] = True
+
+  # ensure cvkwargs uses the same seed
   estimators = [search_maker(
     estimator=classifier_maker(preprocessor=preproc, normalizer=clone(init_est), 
         classifier=clone(init_clf)), **gridkwargs, cv=StratifiedKFold(**cvkwargs))
         for _ in range(max_level)]
+
   logging.info("%d label estimators are constrcuted and start training ..." % max_level)
   estimators = group_fit(train_features, preproc, estimators, max_level) 
   logging.info("complete %d label estimators ..." % max_level)
@@ -736,11 +742,15 @@ def run_single_classifier(csv_file, cvkwargs, gridkwargs, **kwargs):
     batch_mode = kwargs.pop('batch_mode', False)
     n_rows = kwargs.pop('n_rows', -1)
     use_ensemble = kwargs.pop('use_ensemble', False)
+    use_boost = kwargs.pop('use_boost', False)
     pre_split = kwargs.pop('predefine', False)
     model_name = 'decision_tree_single.model'
     if use_ensemble:
         classifier_maker = construct_random_ensemble
         model_name = 'ensemble_%s'%(model_name)
+    elif use_boost:
+        classifier_maker = construct_boost_ensemble
+        model_name = 'boost_%s'%(model_name)
     else:
         classifier_maker = construct_decision_tree
 
@@ -758,11 +768,11 @@ def run_single_classifier(csv_file, cvkwargs, gridkwargs, **kwargs):
     valid_mats = process_joint_features((valid_features['sentiments'].tolist(), valid_features),
         vectorizer=vectorizer)
     train_mats = scipy.sparse.vstack([train_mats, valid_mats])
-    train_targets = numpy.hstack([train_targets, valid_targets])
+    targets = numpy.hstack([train_targets, valid_targets])
 
     if pre_split:
-        train = len(train_targets) - len(valid_targets)
-        test_fold = -1 * numpy.ones(len(train_targets), dtype=numpy.int8)
+        train = len(targets) - len(valid_targets)
+        test_fold = -1 * numpy.ones(len(targets), dtype=numpy.int8)
         test_fold[train:] = 0
         # sorting the features and targets with their length
         unsort_train_mats = train_mats.tolil(copy=True)
@@ -773,15 +783,15 @@ def run_single_classifier(csv_file, cvkwargs, gridkwargs, **kwargs):
         train_mats = train_mats.tocsr()
         del unsort_train_mats
         assert(numpy.all(numpy.diff(train_mats[:train].sum(axis=1).A1) >= 0))
-        unsort_targets = train_targets.copy()
-        train_targets[:train] = unsort_targets[:train][sort_by_size]
-        train_targets[train:] = unsort_targets[train:]
+        unsort_targets = targets.copy()
+        targets[:train] = unsort_targets[:train][sort_by_size]
+        targets[train:] = unsort_targets[train:]
         del unsort_targets
         gridkwargs.update({'cv': PredefinedSplit(test_fold)})
     else:
         gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})
 
-    learning_res = cal_learning_curve(tree_clf, train_mats, train_targets,
+    learning_res = cal_learning_curve(tree_clf, train_mats, targets,
             train_sizes=numpy.linspace(0.1, 1.0, 50),
             **gridkwargs)
 
@@ -789,7 +799,7 @@ def run_single_classifier(csv_file, cvkwargs, gridkwargs, **kwargs):
     test_mats = process_joint_features((test_features['sentiments'].tolist(), test_features), 
         vectorizer=vectorizer)
     assert(train_mats.shape[-1] == test_mats.shape[-1])
-    tree_clf.fit(train_mats, train_targets)
+    tree_clf.fit(train_mats, targets)
     try:
         predictions = tree_clf.predict(test_mats)
     except TypeError as e:
@@ -873,7 +883,7 @@ def run_multi_classifiers(csv_file, cvkwargs, gridkwargs, **kwargs):
         test_fold[len(train_targets):] = 0
         gridkwargs.update({'cv': PredefinedSplit(test_fold)})
     else:
-        gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})        
+        gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
     
     # tuning the ensemble of classifiers and then refit with all training data
     with patch.object(_search, '_fit_and_score',  new_callable=_fit_and_score):
@@ -887,6 +897,7 @@ def run_multi_classifiers(csv_file, cvkwargs, gridkwargs, **kwargs):
     final_result = (searcher, label_searchers)
     if batch_mode:
         return (final_result, test_score)
+
     joblib.dump((searcher, vectorizer, preproc, label_searchers, \
         (train_features, train_targets), (valid_features, valid_targets), \
         (test_features, test_targets)), os.path.join(data_dir, model_name))
@@ -978,6 +989,8 @@ def main(*args):
         help="specify the seed used for data splitting and modeling")
     parser.add_argument("--ensemble", action="store_true",
             help="using ensemble to construct tree classifier")
+    parser.add_argument("--boost", action="store_true",
+            help="using boosting to construct tree classifier")
     args = parser.parse_args()
     if args.subcommand.startswith('w'):
         logging.info("start weighted cross-validation")
@@ -993,7 +1006,7 @@ def main(*args):
         run_single_classifier(os.path.join(data_dir, args.file),
                 cvkws, gridkws, predefine=args.predefine, n_rows=args.nrows,
                 use_ensemble=args.ensemble, random_state=None, # for creating randomness in model
-                max_level=args.max_levels)
+                max_level=args.max_levels, use_boost=args.boost)
     elif args.subcommand.startswith('m'):
         logging.info("start using naive bayes + decision tree to predict"
                 " sentiment file: %s", args.file)
