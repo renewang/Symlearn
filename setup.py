@@ -11,7 +11,7 @@ from setuptools import setup, find_packages
 from distutils.core import Extension
 from distutils.sysconfig import get_python_lib
 # Adding support for accessing  non-package data runtime
-from Cython.Build import cythonize
+# from Cython.Build import cythonize
 import os
 
 
@@ -104,5 +104,5 @@ setup(
     },
 
     # extension modules
-    ext_modules = cythonize("_aux.pyx"), 
+    # ext_modules = cythonize("_aux.pyx"), 
 )
