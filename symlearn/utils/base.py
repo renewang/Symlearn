@@ -32,9 +32,12 @@ class VocabularyDict(UserDict):
                 func = partial(shelve.open, dict_file, flag='r')
             with func() as shelf:
                 super(VocabularyDict, self).__init__(shelf)
-            self.data['-unk-'] = -1  # reference to the last column in embedding
-        elif isinstance(dict_file, VocabularyDict): # copy constructor
+        elif isinstance(dict_file, (VocabularyDict, dict)): # copy constructor
             super(VocabularyDict, self).__init__(dict_file)
+
+        if not '-unk-' in self.data:
+            self.data['-unk-'] = -1  # reference to the last column in embedding
+            
         if norm_number:
             self.norm_number = NUM_PAT
         else: 

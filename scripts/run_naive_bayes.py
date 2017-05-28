@@ -1,9 +1,8 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.model_selection import (StratifiedKFold, GroupKFold, ShuffleSplit,
-        GridSearchCV, learning_curve, ParameterGrid, PredefinedSplit, 
-        RandomizedSearchCV)
+        GridSearchCV, learning_curve, ParameterGrid, PredefinedSplit)
 from sklearn.decomposition import TruncatedSVD
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import make_scorer
 from sklearn.tree import DecisionTreeClassifier
@@ -12,6 +11,8 @@ from sklearn.utils.validation import check_is_fitted, _num_samples
 from sklearn.base import clone 
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
 from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier
+from sklearn.calibration import _SigmoidCalibration as SoftMaxScaler
+from sklearn.dummy import DummyClassifier
 
 from contextlib import contextmanager
 from functools import partial
@@ -21,6 +22,7 @@ from collections import OrderedDict
 from stanfordSentimentTreebank import create_vocab_variants
 from symlearn.utils import (VocabularyDict, count_vectorizer, construct_score, 
     inspect_and_bind)
+from gensim.models.keyedvectors import KeyedVectors
 
 
 import h5py
@@ -29,7 +31,7 @@ import pandas
 import numpy
 import scipy
 
-
+import json
 import pathlib
 import inspect
 import logging
@@ -76,6 +78,26 @@ class RestrictedUnpickler(NumpyUnpickler):
                     (module, name))
         return(super(RestrictedUnpickler, self).find_class(module, name))
  
+
+class DummyProxy(DummyClassifier):
+    """
+    some customize DummyClassifier behaviors
+    """
+    def __init__(self, priors=None):
+        super(DummyProxy, self).__init__(strategy='stratified')
+        self.priors = priors
+
+    def fit(self, X, y, sample_weight=None):
+        """
+        don't fit data
+        """
+        super(DummyProxy, self).fit(X, y, sample_weight=sample_weight)
+        if self.priors is not None:
+            # overwrite
+            self.classes_ = numpy.arange(len(self.priors))
+            self.n_classes_ = len(self.priors)
+            self.class_prior_ = self.priors
+        return(self)
 
 
 def construct_random_ensemble(**kwargs):
@@ -134,7 +156,17 @@ def construct_boost_ensemble(**kwargs):
     sig = inspect.signature(GradientBoostingClassifier)
     params.update({k: v for k, v in kwargs.items() if k in sig.parameters})
     estimator = GradientBoostingClassifier(**params)
-    return(estimator)
+    return estimator
+
+
+def construct_dumb_classifier(**kwargs):
+    """
+    function to return a DummyClassifier
+    """
+    sig = inspect.signature(DummyProxy)
+    params = {k: v for k, v in kwargs.items() if k in sig.parameters}
+    estimator = Pipeline([('classifier', DummyProxy(**params))])
+    return estimator
 
 
 def train_test_split(n_samples, presplit=False, **kwargs):
@@ -168,13 +200,27 @@ def train_test_split(n_samples, presplit=False, **kwargs):
             kwargs["test_size"] = 0.15
         if(not "n_splits" in kwargs):
             kwargs["n_splits"] = 1
-        ttl_idx = numpy.arange(n_samples)
-        # keeping same test
-        test = ttl_idx[-1*predefine[-1][-1]:] 
+
         indices = None 
+        ttl_idx = numpy.arange(n_samples)
         splitter = ShuffleSplit(**kwargs)
-        for train, valid in splitter.split(ttl_idx[:-1*predefine[-1][-1]]):
-            indices = (train, valid, test)
+
+        if len(ttl_idx) == sum(map(operator.itemgetter(1), predefine)):
+            # keeping same test
+            test = ttl_idx[-1*predefine[-1][-1]:] 
+            split_ = ttl_idx[:-1*predefine[-1][-1]]
+        else:
+            for split_idx, test_idx in splitter.split(ttl_idx):
+                test = ttl_idx[test_idx]
+                split_ = ttl_idx[split_idx]
+
+        for train, valid in splitter.split(split_):
+            indices = (split_[train], split_[valid], ttl_idx[test])
+
+        assert(not set(indices[0]) & set(indices[1]))
+        assert(not set(indices[0]) & set(indices[-1]))
+        assert(not set(indices[-1]) & set(indices[1]))
+
         logging.info("using random split #train={n_train} #valid={n_dev} "
                 "#test={n_test}".format(n_train=len(indices[0]),
                 n_dev=len(indices[1]), n_test=len(indices[-1])))
@@ -259,19 +305,29 @@ def construct_preprocessor(**kwargs):
     return(preprocessor)
  
 
-def preload_helper(csv_file, vocab=None, pretrain_loc=None, n_rows=-1,
-    pre_split=False):
+def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, pre_split=False, **kwargs):
     """
     load pretrain features and construct models
     """
+    seed = kwargs.pop('seed', None)
     if pretrain_loc and os.path.exists(pretrain_loc):
-        from unittest.mock import patch
-        with patch.object(joblib.numpy_pickle, 'NumpyUnpickler', 
-            new=RestrictedUnpickler, spec_set=True):
-            preproc = joblib.load(pretrain_loc)
-        vocab = preproc.named_steps['vectorizer'].func.vocab
-    elif vocab:
-        vocab = VocabularyDict(vocab)
+        pretrain_loc = pathlib.Path(pretrain_loc)
+        if pretrain_loc.suffix.endswith('model'):
+            # trained by myself
+            from unittest.mock import patch
+            with patch.object(joblib.numpy_pickle, 'NumpyUnpickler', 
+                new=RestrictedUnpickler, spec_set=True):
+                preproc = joblib.load(pretrain_loc.as_posix())
+            vocab = preproc.named_steps['vectorizer'].func.vocab
+        else:
+            if pretrain_loc.suffix.endswith('bin'):
+                preproc = KeyedVectors.load_word2vec_format(pretrain_loc.as_posix(), 
+                    binary=True)
+            else:
+                preproc = KeyedVectors.load(pretrain_loc.as_posix(), mmap='r')
+            vocab = preproc.vocab
+    elif pretrain_loc == 'train':
+        vocab = VocabularyDict(os.path.join(data_dir, 'treebased_phrases_vocab'))
         preproc = construct_preprocessor(random_state=seed, vocabulary=vocab)
     else:
         vocab, preproc = None, None
@@ -359,12 +415,9 @@ def construct_model(weights, cvkwargs, gridkwargs, preproc=None):
                 numpy.linspace(50, 100, 1, dtype=numpy.int)}
     params = [
             {'normalizer': [StandardScaler()], 'classifier': [GaussianNB()]},
-            # comment out for now. Code here is just for comparison and might
-            # not be really useful 
-            #{'normalizer': [SoftMaxScaler(scale_func='sigmoid')], 
-            #    'classifier': [MultinomialNB()],
-            #    'classifier__alpha': numpy.logspace(-2, 0, 1)}
-            ]
+            {'normalizer': [SoftMaxScaler()], 'classifier': [MultinomialNB()],
+                'classifier__alpha': numpy.logspace(-2, 0, 1)}
+             ]
     for param in params:
         param.update(base_dict)
 
@@ -578,24 +631,21 @@ def cal_learning_curve(clf, train_features, train_targets, **kwargs):
     return(learning_res)
 
 
-def construct_multiple_classifiers(preproc, train_features, train_targets,
-                                   cvkwargs, gridkwargs, 
-                                   classifier_maker=construct_naive_bayes,
-                                    **kwargs):
+def construct_multiple_classifiers(preproc, predictor_maker, train_features, train_targets,
+                                   cvkwargs, gridkwargs, **kwargs):
   """
   group phrases into levels and test on their accuracy with sentence only classifier to see 
     1. if there’s need to re-construct vocabulary set and truncated SVD 
     2. if there’s enough training examples for each level
   """
   max_level = kwargs.pop('max_level')
-  init_est = kwargs.pop('init_est', StandardScaler())
-  init_clf = kwargs.pop('init_clf', GaussianNB())
   n_classes = kwargs.pop('n_classes', 5)
   
-  search_name = kwargs.pop('searcher_name', 'GridSearchCV')
+  # ensure refit is not True also avoid inplace modification
+  gridkwargs_pred = gridkwargs.copy()
+  gridkwargs_pred['refit'] = False
 
-  if search_name == 'GridSearchCV':
-    search_maker = partial(GridSearchCV, param_grid={'classifier__priors': [
+  params = [
             (1/n_classes) * numpy.ones(n_classes),  # uniform
             *(numpy.asarray(arr)/numpy.sum(arr) for arr in [
             [0.8, 0.05, 0.05, 0.05, 0.05], # class 0 dominating
@@ -604,20 +654,12 @@ def construct_multiple_classifiers(preproc, train_features, train_targets,
             [0.05, 0.05, 0.05, 0.8, 0.05], # class 3 dominating
             [0.05, 0.05, 0.05, 0.05, 0.8], # class 4 dominating
             ])
-        ]})
-  else:
-    search_maker = partial(RandomizedSearchCV, param_distributions={
-        'classifier__priors': [scipy.stats.dirichlet(alpha=numpy.ones(n_classes))]
-        })
-
-  # ensure refit is not True
-  if 'refit' not in gridkwargs or gridkwargs['refit']:
-    gridkwargs['refit'] = True
+        ]
+  search_maker = partial(GridSearchCV, param_grid={'classifier__priors': params})
 
   # ensure cvkwargs uses the same seed
-  estimators = [search_maker(
-    estimator=classifier_maker(preprocessor=preproc, normalizer=clone(init_est), 
-        classifier=clone(init_clf)), **gridkwargs, cv=StratifiedKFold(**cvkwargs))
+  estimators = [search_maker(estimator=predictor_maker(preprocessor=preproc,
+    **kwargs), **gridkwargs_pred, cv=StratifiedKFold(**cvkwargs))
         for _ in range(max_level)]
 
   logging.info("%d label estimators are constrcuted and start training ..." % max_level)
@@ -738,21 +780,20 @@ def process_word_features(csv_file, **kwargs):
             logging.info('complete parallel fitting and store in %s' % mmap_fn)
 
 
-def run_single_classifier(csv_file, cvkwargs, gridkwargs, **kwargs):
+classifier_construct = {
+    'tree': construct_decision_tree,
+    'ensemble': construct_random_ensemble,
+    'boost': construct_boost_ensemble,
+}
+
+
+def run_single_classifier(csv_file, classifier_type, cvkwargs, gridkwargs, **kwargs):
     batch_mode = kwargs.pop('batch_mode', False)
     n_rows = kwargs.pop('n_rows', -1)
-    use_ensemble = kwargs.pop('use_ensemble', False)
-    use_boost = kwargs.pop('use_boost', False)
     pre_split = kwargs.pop('predefine', False)
-    model_name = 'decision_tree_single.model'
-    if use_ensemble:
-        classifier_maker = construct_random_ensemble
-        model_name = 'ensemble_%s'%(model_name)
-    elif use_boost:
-        classifier_maker = construct_boost_ensemble
-        model_name = 'boost_%s'%(model_name)
-    else:
-        classifier_maker = construct_decision_tree
+    model_name = 'single.model'
+    classifier_maker = classifier_construct[classifier_type]
+    model_name = '%s_%s'%(classifier_type, model_name)
 
     preproc, (train_features, train_targets), (valid_features, valid_targets), \
         (test_features, test_targets) = preload_helper(csv_file, n_rows=n_rows,
@@ -825,8 +866,16 @@ def run_single_classifier(csv_file, cvkwargs, gridkwargs, **kwargs):
             os.path.join(data_dir, model_name))
     logging.info('dumping {}'.format(model_name))
 
+predictor_construct = {
+    'gnb': partial(construct_naive_bayes, normalizer=clone(StandardScaler()), 
+        classifier=clone(GaussianNB())),
+    'mnb': partial(construct_naive_bayes, normalizer=clone(SoftMaxScaler()), 
+        classifier=clone(MultinomialNB())),
+    'dumb': construct_dumb_classifier,
+}
 
-def run_multi_classifiers(csv_file, cvkwargs, gridkwargs, **kwargs):
+
+def run_multi_classifiers(csv_file, classifier_type, predictor_type, cvkwargs, gridkwargs, **kwargs):
     """
     two-tiered classifiers
     """
@@ -839,23 +888,20 @@ def run_multi_classifiers(csv_file, cvkwargs, gridkwargs, **kwargs):
     seed = kwargs.pop('random_state', None)
     n_rows=kwargs.pop('n_rows', -1)
     n_classes = kwargs.pop('n_classes', 5)
-    use_ensemble = kwargs.pop('use_ensemble', False)
-    pretrain_loc = kwargs.pop('pretrain_model',
-            os.path.join(data_dir, 'treebased_phrases_vocab.model'))
-    vocab = kwargs.pop('vocab', os.path.join(data_dir, 'treebased_phrases_vocab'))
-    model_name = 'decision_tree_multi.model'
-    if use_ensemble:
-        model_name = 'ensemble_%s'%(model_name)
-        classifier_maker = construct_random_ensemble
-    else:
-        classifier_maker = construct_decision_tree
+    pretrain_loc = kwargs.pop('pretrain_model')
+    model_name = 'multi.model'
+    classifier_maker = classifier_construct[classifier_type]
+    model_name = '%s_%s_%s'%(classifier_type, predictor_type, model_name)
 
     preproc, (train_features, train_targets), (valid_features, valid_targets), \
         (test_features, test_targets) = preload_helper(
-            csv_file, vocab=vocab, pretrain_loc=pretrain_loc, pre_split=pre_split)
+            csv_file, pretrain_loc=pretrain_loc, pre_split=pre_split, 
+            n_rows=n_rows)
     
     # calling function which will train n-independent label predictors
-    label_searchers = construct_multiple_classifiers(preproc, train_features, train_targets,
+    predictor_maker = predictor_construct[predictor_type]
+    label_searchers = construct_multiple_classifiers(preproc, 
+        predictor_maker, train_features, train_targets,
         cvkwargs, gridkwargs, max_level=max_level)
     
     # construct the final model
@@ -901,7 +947,7 @@ def run_multi_classifiers(csv_file, cvkwargs, gridkwargs, **kwargs):
     joblib.dump((searcher, vectorizer, preproc, label_searchers, \
         (train_features, train_targets), (valid_features, valid_targets), \
         (test_features, test_targets)), os.path.join(data_dir, model_name))
-    logging.info('completing fitting and dumping {}.model'.format(model_name))
+    logging.info('completing fitting and dumping {}'.format(model_name))
 
 
 def run_cross_validation(csv_file, cvkwargs, gridkwargs, **kwargs):
@@ -975,6 +1021,32 @@ def run_cross_validation(csv_file, cvkwargs, gridkwargs, **kwargs):
     return(model_files)
 
 
+def configure(config_type):
+    """
+    read exec.ini file for extra configuration
+    """
+    default_config = {
+    'single': [{'n_splits': 10, 'random_state': None}, # used to create the same partition
+               {'scoring': 'accuracy', 'verbose': 0}
+               ],
+    'multi':  [{'n_splits': 10, 'random_state': None}, # used to create the same partition
+               {'scoring': 'accuracy', 'verbose': 0, 'n_jobs': 2, 'refit': True}
+               ],
+    'weight': [{'n_splits': 10, 'shuffle': True, 'random_state': None},
+               {'verbose': 10, 'refit': True}
+               ]
+    }
+    config_file = 'exec.json'
+    if os.path.exists(config_file):
+        with open(config_file, 'rt') as fp:
+            site_config = json.load(fp)
+    cvkws, gridkws = default_config[config_type]
+    if config_type in site_config:
+        cvkws.update(site_config[config_type].get('cv', {}))
+        gridkws.update(site_config[config_type].get('grid', {}))
+    return cvkws, gridkws
+
+
 def main(*args):
     parser = argparse.ArgumentParser()
     parser.add_argument("subcommand",
@@ -985,38 +1057,39 @@ def main(*args):
     parser.add_argument("-c", "--ncomponents", type=int, default=300, help="maximal number of components used")
     parser.add_argument("-t", "--max_levels", type=int, default=16, help="threadshold for maximal level used")
     parser.add_argument("--predefine", action="store_true", help="using predefined split")
+    parser.add_argument("--pretrain", default='treebased_phrases_vocab.model', 
+        help="loading pretrained word-embeddings")
+    parser.add_argument("--classifier", default="tree", 
+        help="specifying the type of top classifier, options are [tree|ensemble|boost]")
+    parser.add_argument("--predictor", default="gnb", 
+        help="specifying the type of label predictors, options are [gnb|mnb|dummy]")
     parser.add_argument("--seed", type=int, default=None, 
         help="specify the seed used for data splitting and modeling")
-    parser.add_argument("--ensemble", action="store_true",
-            help="using ensemble to construct tree classifier")
-    parser.add_argument("--boost", action="store_true",
-            help="using boosting to construct tree classifier")
     args = parser.parse_args()
     if args.subcommand.startswith('w'):
         logging.info("start weighted cross-validation")
-        cvkws = {'n_splits': 10, 'shuffle': True, 'random_state': args.seed}
-        gridkws = {'verbose': 10, 'refit': True} 
+        cvkws, gridkws = configure('weight')
+        cvkws.update({'random_state': args.seed}) # for creating consistent split
         run_cross_validation(os.path.join(data_dir, args.file),
                 cvkws, gridkws, predefine=args.predefine, n_rows=args.nrows)
     elif args.subcommand.startswith('s'):
         logging.info("start using decision tree to predict sentiment"
                 " file: %s", args.file)
-        cvkws = {'n_splits': 10, 'random_state':args.seed} # used to create the same partition
-        gridkws = {'scoring': 'accuracy', 'verbose': 0}
-        run_single_classifier(os.path.join(data_dir, args.file),
-                cvkws, gridkws, predefine=args.predefine, n_rows=args.nrows,
-                use_ensemble=args.ensemble, random_state=None, # for creating randomness in model
-                max_level=args.max_levels, use_boost=args.boost)
+        cvkws, gridkws = configure('single')
+        cvkws.update({'random_state': args.seed}) # for creating consistent split
+        run_single_classifier(os.path.join(data_dir, args.file), args.classifier,
+                cvkws, gridkws, predefine=args.predefine, 
+                n_rows=args.nrows, random_state=None, # for creating randomness in model
+                max_level=args.max_levels)
     elif args.subcommand.startswith('m'):
         logging.info("start using naive bayes + decision tree to predict"
                 " sentiment file: %s", args.file)
-        cvkws = {'n_splits': 3, 'random_state': args.seed} # used to create the same partition
-        gridkws = {'scoring': 'accuracy', 'verbose': 10, 
-                   'n_jobs': 2, 'refit': True}
-        run_multi_classifiers(os.path.join(data_dir, args.file),
-                cvkws, gridkws, predefine=args.predefine, n_rows=args.nrows,
-                use_ensemble=args.ensemble, random_state=None,  # for creating randomness in model
-                max_level=args.max_levels)
+        cvkws, gridkws = configure('multi')
+        cvkws.update({'random_state': args.seed}) # for creating consistent split
+        run_multi_classifiers(os.path.join(data_dir, args.file), args.classifier, 
+            args.predictor, cvkws, gridkws, predefine=args.predefine, 
+                n_rows=args.nrows, random_state=None,  # for creating randomness in model
+                max_level=args.max_levels, pretrain_model=os.path.join(data_dir, args.pretrain))
     elif args.subcommand.startswith('p'):
         logging.info("preprocessing and transform words into embedding"
                 ", sentiment file: %s", args.file)

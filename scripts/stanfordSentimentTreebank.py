@@ -85,6 +85,39 @@ def create_vocab_variants(csv_file, n_rows=None):
             yield VocabularyDict(fn, counter=c, **kwparams)
 
 
+def compute_weights(phrase_df, phrase_sizes):
+    """
+    compute sample weights by different schemes
+
+    """
+    # 1. compute weight_by_size, each phrase is equally weighted by the
+    # totoal size of trees 
+    weight_by_size = numpy.ones(len(phrase_df))
+    weight_by_size[phrase_df['node_id']!=0] = numpy.repeat(1/
+                phrase_sizes, phrase_sizes) 
+        
+    # 2. compute weight_by_node, each phrase is weighted by the size of
+    # word spans under the rooted subtree
+    weight_by_node = numpy.ones(len(phrase_df))
+    cur_size = 0
+    for gid, subgrp in phrase_df.groupby('tree_id'):
+        word_size = (subgrp['end_pos'] -
+                    subgrp['start_pos']).values.astype(numpy.float)
+        word_size /= word_size[0]
+        word_size[1:] /= word_size[1:].sum()
+        weight_by_node[cur_size:cur_size + len(subgrp)] = word_size
+        cur_size += len(subgrp)
+
+    assert(numpy.allclose(numpy.sum(weight_by_size), 2 *
+            (phrase_df['node_id']==0).sum()))
+    assert(numpy.allclose(numpy.sum(weight_by_node), 2 *
+            (phrase_df['node_id']==0).sum()))
+
+    weights = {'weight_by_size': weight_by_size,
+                   'weight_by_node': weight_by_node}
+    return weights
+
+
 def preprocess_data(csv_file, **kwargs):
     """
     read in output result in csv format from C++ code
@@ -97,36 +130,17 @@ def preprocess_data(csv_file, **kwargs):
     max_features = kwargs.get('max_features', None) # max # of vocabulary  
     norm_number = kwargs.get('norm_number', False)
     norm_punkt = kwargs.get('norm_punkt', False)
+    return_weights = kwargs.pop('return_weights', False)
     if n_rows < 0:
         n_rows = None
 
     with check_treebased_phrases(csv_file, n_rows=n_rows) as handler:
         phrase_df, phrase_sizes = handler 
-        # 1. compute weight_by_size, each phrase is equally weighted by the
-        # totoal size of trees 
-        weight_by_size = numpy.ones(len(phrase_df))
-        weight_by_size[phrase_df['node_id']!=0] = numpy.repeat(1/
-                phrase_sizes, phrase_sizes) 
-        
-        # 2. compute weight_by_node, each phrase is weighted by the size of
-        # word spans under the rooted subtree
-        weight_by_node = numpy.ones(len(phrase_df))
-        cur_size = 0
-        for gid, subgrp in phrase_df.groupby('tree_id'):
-            word_size = (subgrp['end_pos'] -
-                    subgrp['start_pos']).values.astype(numpy.float)
-            word_size /= word_size[0]
-            word_size[1:] /= word_size[1:].sum()
-            weight_by_node[cur_size:cur_size + len(subgrp)] = word_size
-            cur_size+= len(subgrp)
-
-        assert(numpy.allclose(numpy.sum(weight_by_size), 2 *
-            (phrase_df['node_id']==0).sum()))
-        assert(numpy.allclose(numpy.sum(weight_by_node), 2 *
-            (phrase_df['node_id']==0).sum()))
-
-        weights = {'weight_by_size': weight_by_size,
-                   'weight_by_node': weight_by_node}
+        if return_weights:
+            weights = compute_weights(phrase_df, phrase_sizes)
+        else:
+            weights = None
+     
         ids = phrase_df['tree_id'].values
         sentiments = phrase_df['sentiment'].values
         levels = phrase_df['level'].values
