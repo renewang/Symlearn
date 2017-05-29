@@ -22,19 +22,11 @@ if __name__ == '__main__':
     #n_rows_ = 10000
     cvkws, gridkws = configure('multi')
 
-<<<<<<< HEAD
     exp_levels = numpy.logspace(0, 4, 5, base=2, dtype=numpy.int)
     print(numpy.array2string(exp_levels))
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers_) as executor:
         exec_res = [executor.submit(run_multi_classifiers, csvfile, 'ensemble', 'dumb', 
             i, procfile , cvkws, gridkws, presort=False, n_rows=n_rows_, random_state=None, 
-=======
-    exp_levels = numpy.logspace(0, 2, 1, base=4, dtype=numpy.int)
-    print(numpy.array2string(exp_levels))
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers_) as executor:
-        exec_res = [executor.submit(run_multi_classifiers, csvfile, 'ensemble', 'dumb', 
-            i, None, cvkws, gridkws, presort=False, n_rows=n_rows_, random_state=None, 
->>>>>>> 720f161f1d79db13a8713850223800e7c6fe664a
             batch_mode=True, n_jobs=2) for i in exp_levels]
         exec_ens = []
         for future in concurrent.futures.as_completed(exec_res):
@@ -46,11 +38,7 @@ if __name__ == '__main__':
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers_) as executor:
         exec_res = [executor.submit(run_multi_classifiers, csvfile, 'boost', 'dumb', 
-<<<<<<< HEAD
             i, procfile, cvkws, gridkws, presort=False, n_rows=n_rows_, random_state=None, 
-=======
-            i, None, cvkws, gridkws, presort=False, n_rows=n_rows_, random_state=None, 
->>>>>>> 720f161f1d79db13a8713850223800e7c6fe664a
             batch_mode=True, n_jobs=2) for i in exp_levels]
         exec_bts = []
         for future in concurrent.futures.as_completed(exec_res):
