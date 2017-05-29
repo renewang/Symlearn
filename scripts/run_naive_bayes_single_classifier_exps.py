@@ -23,8 +23,8 @@ if __name__ == '__main__':
     # executing tree
     with concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor:    
         exec_res = [executor.submit(run_single_classifier, csvfile, 'tree',
-            cvkws, gridkws, predefine=True, n_rows=-1, 
-            random_state=os.getpid() % (i + 1), max_level=16, batch_mode=True) for i in range(num_exps)]
+            cvkws, gridkws, presort=True, n_rows=-1, 
+            random_state=os.getpid() % (i + 1), batch_mode=True) for i in range(num_exps)]
         exec_dec = []
         for future in concurrent.futures.as_completed(exec_res, timeout=timeout_):
             print("decision tree worker status:", future.done(), "test accruacy:", future.result()[-1])
@@ -37,8 +37,8 @@ if __name__ == '__main__':
     # executing ensemble
     with concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor:
         exec_res = [executor.submit(run_single_classifier, csvfile, 'ensemble',
-            cvkws, gridkws, predefine=True, n_rows=-1, 
-            random_state=os.getpid() % (i + 1), max_level=16, batch_mode=True) for i in range(num_exps)]
+            cvkws, gridkws, presort=True, n_rows=-1, 
+            random_state=os.getpid() % (i + 1), batch_mode=True) for i in range(num_exps)]
         exec_ens = []
         for future in concurrent.futures.as_completed(exec_res):
             print("ensemble worker status:", future.done(), "test accruacy:", future.result()[-1])
@@ -51,8 +51,8 @@ if __name__ == '__main__':
      # executing boost
     with concurrent.futures.ProcessPoolExecutor(max_workers=None) as executor:
         exec_res = [executor.submit(run_single_classifier, csvfile, 'boost',
-            cvkws, gridkws, predefine=True, n_rows=-1, 
-            random_state=os.getpid() % (i + 1), max_level=16, batch_mode=True) for i in range(num_exps)]
+            cvkws, gridkws, presort=True, n_rows=-1, 
+            random_state=os.getpid() % (i + 1), batch_mode=True) for i in range(num_exps)]
         exec_bt = []
         for future in concurrent.futures.as_completed(exec_res):
             print("ensemble worker status:", future.done(), "test accruacy:", future.result()[-1])

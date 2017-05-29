@@ -196,7 +196,7 @@ def enumerate_subspaces(masked_levels, masked_labels):
 def transform_features(csv_file:str, n_rows:int=-1, preproc:Pipeline=None, 
     vocab:VocabularyDict=None) -> pandas.DataFrame:
     """
-    transform phrases in string to integer encoding list based on 
+    transform phrases from string to integer-encoding list based on 
     the vocabulary set
 
     Parameters
@@ -205,8 +205,8 @@ def transform_features(csv_file:str, n_rows:int=-1, preproc:Pipeline=None,
         the path used to store tree relevant data
     @param: n_rows, integer
         the number of line to read in from csv_file specified above
-    @param: preproc,  
-    @param: vocab, 
+    @param: preproc, (on constructing)
+    @param: vocab, (on constructing)
     """
     cdef:
         int i, uid
