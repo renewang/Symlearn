@@ -19,15 +19,15 @@ if __name__ == '__main__':
 
     timeout_ = None
     max_workers_ = 2
-    n_rows_ = 10000
+    #n_rows_ = 10000
     cvkws, gridkws = configure('multi')
 
-    exp_levels = numpy.logspace(0, 2, 2, base=4, dtype=numpy.int)
+    exp_levels = numpy.logspace(0, 4, 5, base=2, dtype=numpy.int)
     print(numpy.array2string(exp_levels))
     with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers_) as executor:
         exec_res = [executor.submit(run_multi_classifiers, csvfile, 'ensemble', 'dumb', 
-            cvkws, gridkws, predefine=False, n_rows=n_rows_, random_state=None, 
-            max_level=i, batch_mode=True, n_jobs=1, pretrain_model=procfile) for i in exp_levels]
+            i, procfile , cvkws, gridkws, presort=False, n_rows=n_rows_, random_state=None, 
+            batch_mode=True, n_jobs=2) for i in exp_levels]
         exec_ens = []
         for future in concurrent.futures.as_completed(exec_res):
             print("ensemble multi-classifier worker status:", future.done(), "test accruacy:", future.result()[-1])
@@ -35,4 +35,16 @@ if __name__ == '__main__':
     concurrent.futures.wait(exec_res, timeout=timeout_, return_when=ALL_COMPLETED)
     del exec_res
     gc.collect()
-    joblib.dump(exec_ens, os.path.join(data_dir, 'multi_classifier_exps.pkl'))
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers_) as executor:
+        exec_res = [executor.submit(run_multi_classifiers, csvfile, 'boost', 'dumb', 
+            i, procfile, cvkws, gridkws, presort=False, n_rows=n_rows_, random_state=None, 
+            batch_mode=True, n_jobs=2) for i in exp_levels]
+        exec_bts = []
+        for future in concurrent.futures.as_completed(exec_res):
+            print("ensemble multi-classifier worker status:", future.done(), "test accruacy:", future.result()[-1])
+            exec_bts.append(future.result())
+    concurrent.futures.wait(exec_res, timeout=timeout_, return_when=ALL_COMPLETED)
+    del exec_res
+    gc.collect()
+    joblib.dump([exec_ens, exec_bts], os.path.join(data_dir, 'multi_classifier_exps.pkl'))
