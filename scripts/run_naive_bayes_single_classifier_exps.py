@@ -56,7 +56,7 @@ if __name__ == '__main__':
         exec_bt = []
         for future in concurrent.futures.as_completed(exec_res):
             print("ensemble worker status:", future.done(), "test accruacy:", future.result()[-1])
-            exec_ens.append(future.result())
+            exec_bt.append(future.result())
 
     concurrent.futures.wait(exec_res, timeout=timeout_, return_when=ALL_COMPLETED)
 

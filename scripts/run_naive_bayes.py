@@ -104,13 +104,13 @@ def construct_random_ensemble(**kwargs):
     """
     create an bootstrap-based ensemble 
     """
-    params = {'n_estimators': 30,               # number of estimators used 
+    params = {'n_estimators': 50,               # number of estimators used 
               'criterion'   : 'entropy',
               'max_features' : 'auto',          # the maximal features for a best split
               'max_depth': None,                # the max depth for tree: None for splitting till all leaves are pure
                                                 # this can work with the min_sample_split and turn off 
                                                 # if max_leaf_node is not None
-              'min_samples_split': 100,         # the minimal number of samples to split a node
+              'min_samples_split': 2,           # the minimal number of samples to split a node
               'min_samples_leaf': 100,          # the minimal sample required to be in leaf node
               'min_weight_fraction_leaf': 0.05, # the fraction of samples required to be in the leaf
               'max_leaf_nodes': None,           # the maximal number of leaf nodes to be grown
@@ -328,7 +328,7 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, pre_split=False, **kw
             vocab = preproc.vocab
     elif pretrain_loc == 'train':
         vocab = VocabularyDict(os.path.join(data_dir, 'treebased_phrases_vocab'))
-        preproc = construct_preprocessor(random_state=seed, vocabulary=vocab)
+        preproc = construct_preprocessor(vocabulary=vocab)
     else:
         vocab, preproc = None, None
 
@@ -340,7 +340,7 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, pre_split=False, **kw
         features['sentiments']))) # taking out root label
 
     # construct train / test split
-    train, valid, test = train_test_split(n_samples, predefine=pre_split)
+    train, valid, test = train_test_split(n_samples, predefine=pre_split, random_state=seed)
 
     train_features = pandas.DataFrame({
         'ids': features['ids'][train], 
@@ -1036,14 +1036,14 @@ def configure(config_type):
                {'verbose': 10, 'refit': True}
                ]
     }
+    cvkws, gridkws = default_config[config_type]
     config_file = 'exec.json'
     if os.path.exists(config_file):
         with open(config_file, 'rt') as fp:
             site_config = json.load(fp)
-    cvkws, gridkws = default_config[config_type]
-    if config_type in site_config:
-        cvkws.update(site_config[config_type].get('cv', {}))
-        gridkws.update(site_config[config_type].get('grid', {}))
+        if config_type in site_config:
+            cvkws.update(site_config[config_type].get('cv', {}))
+            gridkws.update(site_config[config_type].get('grid', {}))
     return cvkws, gridkws
 
 
