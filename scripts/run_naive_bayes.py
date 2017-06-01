@@ -60,6 +60,7 @@ logging.basicConfig(format=FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p',
 data_dir = os.path.join(os.getenv('DATADIR', default='..'), 'data')
 
 from joblib.numpy_pickle import NumpyUnpickler
+
 class RestrictedUnpickler(NumpyUnpickler):
     """
     overwrite find_class to restrict global modules import
@@ -636,15 +637,35 @@ def cal_learning_curve(clf, train_features, train_targets, **kwargs):
     return(learning_res)
 
 
-def construct_multiple_classifiers(preproc, predictor_maker, train_features, train_targets,
-                                   cvkwargs, gridkwargs, **kwargs):
+def construct_multiple_classifiers(preproc, predictor_maker, max_level, train_features, train_targets,
+                                   cvkwargs, gridkwargs, n_classes=5, **kwargs):
   """
   group phrases into levels and test on their accuracy with sentence only classifier to see 
     1. if there’s need to re-construct vocabulary set and truncated SVD 
     2. if there’s enough training examples for each level
+
+  Parameters
+  ----------
+  @param preproc: sklearn.TransformMixin instance
+    used to transform phrases into word vector based on BOW
+  @param predictor_maker: sklearn.BaseEstimator instance
+    class to constructor label_predictors for each level within max_level
+  @param max_level: int
+    the maximal integer used to construct label_predictors to ensure the training examples used
+    sufficiently large
+  @param train_features: pd.DataFrame
+    store features in pandas.DataFrame
+  @param train_targets: numpy.ndarray
+    store the root sentiments (no effect here)
+  @param cvkwargs: dict
+    keyword arguments to pass to cross-validation isntance constructor
+  @param gridkwargs: dict
+    keyword arguments to pass to GridSearchCV instance excluding cv
+  @param n_classes: int
+    the number of sentiment classes used
+  @param kwargs: dict
+    keyword arguments passing to predictor_maker
   """
-  max_level = kwargs.pop('max_level')
-  n_classes = kwargs.pop('n_classes', 5)
   
   # ensure refit is not True also avoid inplace modification
   gridkwargs_pred = gridkwargs.copy()
@@ -663,9 +684,10 @@ def construct_multiple_classifiers(preproc, predictor_maker, train_features, tra
   search_maker = partial(GridSearchCV, param_grid={'classifier__priors': params})
 
   # ensure cvkwargs uses the same seed
+  cvkwargs['random_state'] = os.getpid()
   estimators = [search_maker(estimator=predictor_maker(preprocessor=preproc,
     **kwargs), **gridkwargs_pred, cv=StratifiedKFold(**cvkwargs))
-        for _ in range(max_level)]
+        for _ in range(max_level)] # include root level
 
   logging.info("%d label estimators are constrcuted and start training ..." % max_level)
   estimators = group_fit(train_features, preproc, estimators, max_level) 
@@ -767,7 +789,6 @@ def process_word_features(csv_file, **kwargs):
                 ds[1] = X.indptr
                 input_.create_dataset("csr_data", data=X.data)
 
-
         with open(mmap_fn, "w+b") as mmap_fp:
             # preallocate the shared memmap files to store the result
             Xtvars = numpy.memmap(mmap_fp, dtype=numpy.float, mode="w+",
@@ -789,6 +810,15 @@ classifier_construct = {
     'tree': construct_decision_tree,
     'ensemble': construct_random_ensemble,
     'boost': construct_boost_ensemble,
+}
+
+
+predictor_construct = {
+    'gnb': partial(construct_naive_bayes, normalizer=clone(StandardScaler()), 
+        classifier=clone(GaussianNB())),
+    'mnb': partial(construct_naive_bayes, normalizer=clone(SoftMaxScaler()), 
+        classifier=clone(MultinomialNB())),
+    'dumb': construct_dumb_classifier,
 }
 
 
@@ -894,14 +924,6 @@ def run_single_classifier(csv_file, classifier_type, cvkwargs, gridkwargs, batch
             os.path.join(data_dir, model_name))
     logging.info('dumping {}'.format(model_name))
 
-predictor_construct = {
-    'gnb': partial(construct_naive_bayes, normalizer=clone(StandardScaler()), 
-        classifier=clone(GaussianNB())),
-    'mnb': partial(construct_naive_bayes, normalizer=clone(SoftMaxScaler()), 
-        classifier=clone(MultinomialNB())),
-    'dumb': construct_dumb_classifier,
-}
-
 
 def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level, 
     pretrain_loc, cvkwargs, gridkwargs, batch_mode=False, presort=False, n_rows=-1, 
@@ -954,11 +976,11 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
     # calling function which will train n-independent label predictors
     predictor_maker = predictor_construct[predictor_type]
     label_searchers = construct_multiple_classifiers(preproc, 
-        predictor_maker, train_features, train_targets,
-        cvkwargs, gridkwargs, max_level=max_level)
+        predictor_maker, max_level, train_features, train_targets,
+        cvkwargs, gridkwargs)
     
     # construct the final model
-    vectorizer = DictVectorizer(sparse=True)
+    vectorizer = DictVectorizer(sparse=(classifier_type!='boost'))
     classifier = Pipeline(
         [('transformer', None),
          ('classifier', None)])
