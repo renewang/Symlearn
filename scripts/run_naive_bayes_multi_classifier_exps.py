@@ -32,7 +32,7 @@ if __name__ == '__main__':
     exp_levels = numpy.logspace(0, 2, 3, base=4, dtype=numpy.int)
     print(numpy.array2string(exp_levels))
 
-    with open("multi_classifier_exps.pkl", "wb") as fp:
+    with open(os.path.join(data_dir, "multi_classifier_exps.pkl"), "wb") as fp:
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers_) as executor:
             exec_res = [executor.submit(run_multi_classifiers, csvfile, 'ensemble', 'dumb', 
                     i, procfile , cvkws, gridkws, presort=False, n_rows=n_rows_, random_state=None, 
