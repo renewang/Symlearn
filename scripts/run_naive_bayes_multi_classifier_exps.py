@@ -29,6 +29,7 @@ if __name__ == '__main__':
     timeout_ = 600 # 10 min
     max_workers_ = 3
     cvkws, gridkws = configure('multi')
+    gridkws['n_jobs'] = 1
     exp_levels = numpy.logspace(0, 2, 3, base=4, dtype=numpy.int)
     print(numpy.array2string(exp_levels))
 
