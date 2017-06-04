@@ -26,8 +26,8 @@ if __name__ == '__main__':
         n_rows_ = -1
         print('all records will be read in')
 
-    timeout_ = 36000 # 10 min
-    max_workers_ = 2
+    timeout_ = 600 # 10 min
+    max_workers_ = 3
     cvkws, gridkws = configure('multi')
     exp_levels = numpy.logspace(0, 2, 3, base=4, dtype=numpy.int)
     print(numpy.array2string(exp_levels))
@@ -36,7 +36,7 @@ if __name__ == '__main__':
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers_) as executor:
             exec_res = [executor.submit(run_multi_classifiers, csvfile, 'ensemble', 'dumb', 
                     i, procfile , cvkws, gridkws, presort=False, n_rows=n_rows_, random_state=None, 
-                    batch_mode=True, n_jobs=2) for i in exp_levels]
+                    batch_mode=True, n_jobs=1) for i in exp_levels]
             try:
                 numpy.savez(fp, *(future.result() for future in 
                     concurrent.futures.as_completed(exec_res, timeout=timeout_)))
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers_) as executor:
             exec_res = [executor.submit(run_multi_classifiers, csvfile, 'boost', 'dumb', 
                     i, procfile, cvkws, gridkws, presort=False, n_rows=n_rows_, random_state=None, 
-                    batch_mode=True, n_jobs=2) for i in exp_levels]
+                    batch_mode=True, n_jobs=1) for i in exp_levels]
             try:
                 numpy.savez(fp, *(future.result() for n_run, future in enumerate(
                     concurrent.futures.as_completed(exec_res, timeout=timeout_))))
