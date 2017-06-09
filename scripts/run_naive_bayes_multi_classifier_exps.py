@@ -26,11 +26,11 @@ if __name__ == '__main__':
         n_rows_ = -1
         print('all records will be read in')
 
-    timeout_ = 600 # 10 min
+    timeout_ = 7200 # 2 hr 
     max_workers_ = 3
     cvkws, gridkws = configure('multi')
     gridkws['n_jobs'] = 1
-    exp_levels = numpy.logspace(0, 2, 3, base=4, dtype=numpy.int)
+    exp_levels = numpy.logspace(0, 1, 2, base=4, dtype=numpy.int)
     print(numpy.array2string(exp_levels))
 
     with open(os.path.join(data_dir, "multi_classifier_exps.pkl"), "wb") as fp:
