@@ -12,6 +12,7 @@ from sklearn.base import clone
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
 from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.calibration import _SigmoidCalibration as SoftMaxScaler
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.dummy import DummyClassifier
 
 from contextlib import contextmanager
@@ -30,6 +31,7 @@ import joblib
 import pandas
 import numpy
 import scipy
+import cython
 
 import json
 import pathlib
@@ -42,15 +44,13 @@ import os
 import gc
 
 
-try:
-    from _aux import (transform_features, group_fit, labels_to_attributes,
-        process_joint_features)
-except: 
-    logging.info('using pyximport')
-    import pyximport
-    pyximport.install(inplace=True)
+if cython.compiled:
     from _aux import (transform_features, group_fit, labels_to_attributes, 
-        process_joint_features)   
+        process_joint_features)       
+else:
+    from aux import (transform_features, group_fit, labels_to_attributes,
+        process_joint_features)
+
 
 FORMAT='%(asctime)s:%(levelname)s:%(threadName)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s'
 logging.captureWarnings(True)
@@ -378,6 +378,7 @@ def construct_naive_bayes(preprocessor=None, **kwargs):
     providing default construction for naive bayes
     """
     if preprocessor is None:
+        # construct a un-trained word processing from scratch
         preprocessor = construct_preprocessor(**kwargs)
         estimator = Pipeline([
             ('preprocessor', preprocessor),
@@ -671,25 +672,45 @@ def construct_multiple_classifiers(preproc, predictor_maker, max_level, train_fe
   gridkwargs_pred = gridkwargs.copy()
   gridkwargs_pred['refit'] = False
 
-  params = [
-            (1/n_classes) * numpy.ones(n_classes),  # uniform
-            *(numpy.asarray(arr)/numpy.sum(arr) for arr in [
-            [0.8, 0.05, 0.05, 0.05, 0.05], # class 0 dominating
-            [0.05, 0.8, 0.05, 0.05, 0.05], # class 1 dominating
-            [0.05, 0.05, 0.8, 0.05, 0.05], # class 2 dominating
-            [0.05, 0.05, 0.05, 0.8, 0.05], # class 3 dominating
-            [0.05, 0.05, 0.05, 0.05, 0.8], # class 4 dominating
-            ])
+
+  strategy_ = kwargs.get('strategy', 'biased')
+
+  if strategy_:
+    if strategy_  == 'biased':
+        params = [
+                (1/n_classes) * numpy.ones(n_classes),  # uniform
+                *(numpy.asarray(arr)/numpy.sum(arr) for arr in [
+                [0.8, 0.05, 0.05, 0.05, 0.05], # class 0 dominating
+                [0.05, 0.8, 0.05, 0.05, 0.05], # class 1 dominating
+                [0.05, 0.05, 0.8, 0.05, 0.05], # class 2 dominating
+                [0.05, 0.05, 0.05, 0.8, 0.05], # class 3 dominating
+                [0.05, 0.05, 0.05, 0.05, 0.8], # class 4 dominating
+                ])
         ]
-  search_maker = partial(GridSearchCV, param_grid={'classifier__priors': params})
+        search_maker = partial(GridSearchCV, param_grid={'classifier__priors': params})
+    else:
+        raise NotImplementedError('RandomSearchCV will be implemented here')
+  else:
+    # using probability calibration CV
+    search_maker = partial(CalibratedClassifierCV, method='sigmoid')
+
+  # filter unwanted kwargs
+  sig = inspect.signature(search_maker, follow_wrapped=True)
+  disjoint_keys = set(gridkwargs_pred.keys()) - set(sig.parameters.keys())
+  for k in disjoint_keys:
+    del gridkwargs_pred[k]
+
+  # handle StandardScaler
+  orig_steps = preproc.steps
+  orig_steps.append(('normalizer', StandardScaler()))
+  preproc.set_params(steps = orig_steps)
 
   # ensure cvkwargs uses the same seed
   cvkwargs['random_state'] = os.getpid()
-  estimators = [search_maker(estimator=predictor_maker(preprocessor=preproc,
-    **kwargs), **gridkwargs_pred, cv=StratifiedKFold(**cvkwargs))
-        for _ in range(max_level)] # include root level
+  estimators = [search_maker(predictor_maker(preprocessor=preproc, **kwargs), 
+    **gridkwargs_pred, cv=StratifiedKFold(**cvkwargs)) for _ in range(max_level)] # include root level
 
-  logging.info("%d label estimators are constrcuted and start training ..." % max_level)
+  logging.info("%d label estimators are constructed and start training ..." % max_level)
   estimators = group_fit(train_features, preproc, estimators, max_level) 
   logging.info("complete %d label estimators ..." % max_level)
   return estimators
@@ -812,12 +833,9 @@ classifier_construct = {
     'boost': construct_boost_ensemble,
 }
 
-
 predictor_construct = {
-    'gnb': partial(construct_naive_bayes, normalizer=clone(StandardScaler()), 
-        classifier=clone(GaussianNB())),
-    'mnb': partial(construct_naive_bayes, normalizer=clone(SoftMaxScaler()), 
-        classifier=clone(MultinomialNB())),
+    'gnb': partial(construct_naive_bayes, classifier=clone(GaussianNB())),
+    'mnb': partial(construct_naive_bayes, classifier=clone(MultinomialNB())),
     'dumb': construct_dumb_classifier,
 }
 
@@ -985,19 +1003,30 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
         [('transformer', None),
          ('classifier', None)])
 
-    # iterate different label_predictors (pre-trained with different parameters)
-    transformers = []
-    for i, param in enumerate(label_searchers[0].cv_results_['params']):
-        scores = numpy.asarray([est.cv_results_['mean_test_score'][i]
-            for est in label_searchers])
-        logging.info('label_predictors fit with priors=%s accuracy=%s' %(
-            numpy.array2string(param['classifier__priors'], suppress_small=True, precision=3),
-            numpy.array2string(scores, suppress_small=True, precision=3)))
-        label_predictors = [clone(est.estimator).set_params(**param) 
-                            for est in label_searchers]
+    if hasattr(label_searchers[0], 'refit') and not label_searchers[0].refit:  # need a clone
+        # iterate different label_predictors (pre-trained with different parameters)
+        transformers = []
+        for i, param in enumerate(label_searchers[0].cv_results_['params']):
+            scores = numpy.asarray([est.cv_results_['mean_test_score'][i]
+                for est in label_searchers])
+            logging.info('label_predictors fit with priors=%s accuracy=%s' %(
+                numpy.array2string(param['classifier__priors'], suppress_small=True, precision=3),
+                numpy.array2string(scores, suppress_small=True, precision=3)))
+            label_predictors = [clone(est.estimator).set_params(**param) 
+                                for est in label_searchers]
+            transformers.append(FunctionTransformer(
+                labels_to_attributes(preproc, vectorizer), 
+                validate=False, kw_args={'label_predictors': label_predictors}))
+    else: # use prefit
+        for i, est in enumerate(label_searchers):
+            class_prior_ = est.class_prior_
+            scores = est.cv_results_['mean_test_score']
+            logging.info('label_predictors fit with priors=%s accuracy=%s' %(
+                    numpy.array2string(class_prior_, suppress_small=True, precision=3),
+                    numpy.array2string(scores, suppress_small=True, precision=3)))
         transformers.append(FunctionTransformer(
             labels_to_attributes(preproc, vectorizer), 
-            validate=False, kw_args={'label_predictors': label_predictors}))
+            validate=False, kw_args={'label_predictors': label_searchers}))
 
     if presort:
         train = len(targets) - len(valid_targets)

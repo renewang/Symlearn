@@ -1,5 +1,3 @@
-#!python
-#cython: language_level=3, annotation_typing=True
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import label_binarize
 from sklearn.utils.validation import check_is_fitted
@@ -23,7 +21,7 @@ import joblib
 import gc
 import os
 
-cimport cython
+import cython
 
 
 #TODO: write prune code
@@ -85,12 +83,12 @@ def depth_first_traversal(tree_clf):
             stack_.pop()
         count += 1
         assert(numpy.all(indicator <= 2))
-    assert(tree_clf.tree_.node_count - numpy.sum(tree_clf.tree_.children_right >
-        0) == len(paths_))
+    assert(tree_clf.tree_.node_count - numpy.sum(
+        tree_clf.tree_.children_right > 0) == len(paths_))
     return(paths_)
 
 
-#@cython.ccall
+
 def process_joint_features(data:typing.Tuple, vectorizer:DictVectorizer=None, 
     n_levels:int=-1, n_classes:int=5) -> typing.Iterable:
     """
@@ -199,7 +197,7 @@ def enumerate_subspaces(masked_levels, masked_labels):
             yield sub_levels, sub_labels
 
 
-#@cython.ccall
+@cython.locals(i=cython.int, uid=cython.int)
 def transform_features(csv_file:str, n_rows:int=-1, preproc:Pipeline=None, 
     vocab:VocabularyDict=None) -> pandas.DataFrame:
     """
@@ -215,8 +213,6 @@ def transform_features(csv_file:str, n_rows:int=-1, preproc:Pipeline=None,
     @param: preproc, (on constructing)
     @param: vocab, (on constructing)
     """
-    cdef:
-        int i, uid
 
     ids, sentences, sentiments, levels, weights, phrases_pos = \
             preprocess_data(csv_file, n_rows=n_rows)
@@ -254,7 +250,7 @@ def transform_features(csv_file:str, n_rows:int=-1, preproc:Pipeline=None,
     return features
 
 
-#@cython.ccall
+
 def group_fit(features:pandas.DataFrame, preproc:Pipeline, 
     estimators:list, max_level:int) -> list:
   """
@@ -295,22 +291,13 @@ def group_fit(features:pandas.DataFrame, preproc:Pipeline,
     yt = numpy.hstack(yt)
     est.fit(xt, yt)
 
-    # report and save brier_score to the CalibrationCV instance
-    assert(yt.ndim == 2)
-    if not hasattr(est, 'cv_results_'):
-        cv_results_ = {}
-        # compute micro means
-        cv_results_['split_brier_score'] = map(
-            lambda clf, x, y: brier_score_loss(yt.ravel(), clf.predict_proba(xt).ravel()), 
-            est.calibrated_classifiers_)
-        setattr(est, 'cv_results_', cv_results_)
-        cv_results_['mean_test_score'] = numpy.mean(cv_results_['split_brier_score'])
-        cv_results_['std_test_score'] = numpy.std(cv_results_['split_brier_score'])
   return estimators
 
 
+@cython.cclass
 class labels_to_attributes(object):
 
+    cython.declare(n_classes=cython.int, using_probs=cython.bint)
     def __init__(self, preproc:Pipeline, vectorizer:DictVectorizer, 
                 using_probs:bool=True, n_classes:int=5):
         self.preproc = preproc
@@ -320,6 +307,7 @@ class labels_to_attributes(object):
 
 
     #@cython.ccall
+    @cython.locals(i=cython.int, level=cython.int, start=cython.int, end=cython.int)
     def __call__(self, raw_data:pandas.DataFrame, y:list=None, 
         label_predictors:list=None) -> typing.Iterable:
       """
@@ -336,9 +324,6 @@ class labels_to_attributes(object):
       @param label_predictors: list of sklearn.BaseEstimators
         a list of sklearn.BaseEstimators instances which should have predict or predict_proba methods
       """
-      cdef:
-        int i, level, start=0, end=0
-
       levels = numpy.hstack(raw_data['levels'])
       phrases = numpy.hstack(raw_data['phrases'])
 
