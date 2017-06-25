@@ -14,6 +14,7 @@ from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier
 from sklearn.calibration import _SigmoidCalibration as SoftMaxScaler
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.dummy import DummyClassifier
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 from contextlib import contextmanager
 from functools import partial
@@ -167,6 +168,30 @@ def construct_dumb_classifier(**kwargs):
     sig = inspect.signature(DummyProxy)
     params = {k: v for k, v in kwargs.items() if k in sig.parameters}
     estimator = Pipeline([('classifier', DummyProxy(**params))])
+    return estimator
+
+
+def construct_discriminant(**kwargs):
+    """
+    construct a linear discriminant for dimensionality reduction
+    """
+    params = {'solver': 'eigen',        # solver to compute convariance matrix, options are
+                                        # svd (default, large data)
+                                        # lsqr, least square solution can combine shrinkage 
+                                        # eigen, can combine shrinkage  
+              'shrinkage': None,        # set shrinkage for lsqr and eigne solver, options are
+                                        # None (default, no shrinkage for svd), 
+                                        # 'auto': apply shrinkage based on Ledoit-Wolf lemma
+                                        # 'float': any float number within [0, 1]
+              'priors': None,           # class pirors
+              'n_components': 150,      # number of dimensionality for reduction
+              'store_covariance': True, # compute the covariance matrix per-class
+              'tol': None,              # tolerance for svd solver
+             }
+
+    sig = inspect.signature(LinearDiscriminantAnalysis)
+    params.update({k: v for k, v in kwargs.items() if k in sig.parameters})
+    estimator = LinearDiscriminantAnalysis(**params)
     return estimator
 
 
@@ -465,6 +490,7 @@ def construct_model(weights, cvkwargs, gridkwargs, preproc=None):
 
 class _fit_and_score(object):
 
+
     def __call__(self, estimator, X, y, scorer, train, test, verbose,
                    parameters, fit_params, return_train_score=False,
                    return_parameters=False, return_n_test_samples=False,
@@ -700,9 +726,11 @@ def construct_multiple_classifiers(preproc, predictor_maker, max_level, train_fe
   for k in disjoint_keys:
     del gridkwargs_pred[k]
 
-  # handle StandardScaler
+  
   orig_steps = preproc.steps
-  orig_steps.append(('normalizer', StandardScaler()))
+  orig_steps.extend([('normalizer', StandardScaler()), # adding StandardScaler
+                    ('reductor', construct_discriminant())]) # adding LDA
+  
   preproc.set_params(steps = orig_steps)
 
   # ensure cvkwargs uses the same seed
@@ -711,7 +739,10 @@ def construct_multiple_classifiers(preproc, predictor_maker, max_level, train_fe
     **gridkwargs_pred, cv=StratifiedKFold(**cvkwargs)) for _ in range(max_level)] # include root level
 
   logging.info("%d label estimators are constructed and start training ..." % max_level)
-  estimators = group_fit(train_features, preproc, estimators, max_level) 
+  levels = numpy.hstack(train_features['levels'])
+  phrases = numpy.hstack(train_features['phrases']) # data type is object
+  sentiments = numpy.hstack(train_features['sentiments'])
+  estimators = group_fit(levels, phrases, sentiments, preproc, estimators, max_level) 
   logging.info("complete %d label estimators ..." % max_level)
   return estimators
 
@@ -1028,26 +1059,7 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
             labels_to_attributes(preproc, vectorizer), 
             validate=False, kw_args={'label_predictors': label_searchers}))
 
-    if presort:
-        train = len(targets) - len(valid_targets)
-        test_fold = -1 * numpy.ones(len(targets), dtype=numpy.int8)
-        test_fold[train:] = 0
-        # sorting the features and targets with their length
-        unsort_train_mats = train_mats.tolil(copy=True)
-        train_mats = scipy.sparse.lil_matrix(train_mats.shape, dtype=train_mats.dtype)
-        sort_by_size = numpy.argsort(unsort_train_mats[:train].sum(axis=1).A1)
-        train_mats[:train] = unsort_train_mats[:train][sort_by_size]
-        train_mats[train:] = unsort_train_mats[train:]
-        train_mats = train_mats.tocsr()
-        del unsort_train_mats
-        assert(numpy.all(numpy.diff(train_mats[:train].sum(axis=1).A1) >= 0))
-        unsort_targets = targets.copy()
-        targets[:train] = unsort_targets[:train][sort_by_size]
-        targets[train:] = unsort_targets[train:]
-        del unsort_targets
-        gridkwargs.update({'cv': PredefinedSplit(test_fold)})
-    else:
-        gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
+    gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
     
     # tuning the ensemble of classifiers and then refit with all training data
     with patch.object(_search, '_fit_and_score',  new_callable=_fit_and_score):

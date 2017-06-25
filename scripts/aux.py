@@ -250,15 +250,14 @@ def transform_features(csv_file:str, n_rows:int=-1, preproc:Pipeline=None,
     return features
 
 
-
-def group_fit(features:pandas.DataFrame, preproc:Pipeline, 
-    estimators:list, max_level:int) -> list:
+@cython.ccall
+@cython.returns(list)
+@cython.locals(max_level=cython.int, key=cython.int)
+def group_fit(levels:numpy.ndarray, phrases:numpy.ndarray, sentiments:numpy.ndarray, 
+    preproc:Pipeline, estimators:list, max_level:int) -> list:
   """
   fitting a list of naive bayes estimators
   """
-  levels = numpy.hstack(features['levels']) 
-  phrases = numpy.hstack(features['phrases'])   # data type is object
-  sentiments = numpy.hstack(features['sentiments'])
 
   # transform by preproc
   proced = phrases.tolist()
@@ -266,7 +265,8 @@ def group_fit(features:pandas.DataFrame, preproc:Pipeline,
     try:
         proced = trans.transform(proced)
     except NotFittedError as e:
-        proced = trans.fit_transform(proced)
+        proced = trans.fit_transform(proced, sentiments)
+        #proced = trans.fit_transform(proced, levels)
 
 
   Xt = [[] for _ in numpy.arange(max_level)]
@@ -298,6 +298,7 @@ def group_fit(features:pandas.DataFrame, preproc:Pipeline,
 class labels_to_attributes(object):
 
     cython.declare(n_classes=cython.int, using_probs=cython.bint)
+
     def __init__(self, preproc:Pipeline, vectorizer:DictVectorizer, 
                 using_probs:bool=True, n_classes:int=5):
         self.preproc = preproc
@@ -306,7 +307,6 @@ class labels_to_attributes(object):
         self.using_probs = using_probs
 
 
-    #@cython.ccall
     @cython.locals(i=cython.int, level=cython.int, start=cython.int, end=cython.int)
     def __call__(self, raw_data:pandas.DataFrame, y:list=None, 
         label_predictors:list=None) -> typing.Iterable:
@@ -325,7 +325,8 @@ class labels_to_attributes(object):
         a list of sklearn.BaseEstimators instances which should have predict or predict_proba methods
       """
       levels = numpy.hstack(raw_data['levels'])
-      phrases = numpy.hstack(raw_data['phrases'])
+      phrases = numpy.hstack(raw_data['phrases']) # data type is object
+      sentiments = numpy.hstack(raw_data['sentiments'])
 
       n_samples = len(levels)
       Xt = self.preproc.transform(phrases)  # phrases to matrix
@@ -347,7 +348,7 @@ class labels_to_attributes(object):
       try:
         check_is_fitted(label_predictors[0], 'theta_')
       except AttributeError:
-        group_fit(raw_data, self.preproc, label_predictors, 
+        group_fit(levels, phrases, sentiments, self.preproc, label_predictors, 
             len(label_predictors))
 
       for level in uniq_levels:
