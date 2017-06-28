@@ -10,7 +10,8 @@ from sklearn.feature_extraction import DictVectorizer
 from sklearn.utils.validation import check_is_fitted, _num_samples
 from sklearn.base import clone 
 from sklearn.preprocessing import FunctionTransformer, StandardScaler
-from sklearn.ensemble import ExtraTreesClassifier, GradientBoostingClassifier
+from sklearn.ensemble import (ExtraTreesClassifier, GradientBoostingClassifier, 
+    AdaBoostClassifier)
 from sklearn.calibration import _SigmoidCalibration as SoftMaxScaler
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.dummy import DummyClassifier
@@ -78,7 +79,7 @@ class RestrictedUnpickler(NumpyUnpickler):
             else:
                 raise pickle.UnpicklingError("global '%s.%s' is forbidden" %
                     (module, name))
-        return(super(RestrictedUnpickler, self).find_class(module, name))
+        return super(RestrictedUnpickler, self).find_class(module, name)
  
 
 class DummyProxy(DummyClassifier):
@@ -99,7 +100,7 @@ class DummyProxy(DummyClassifier):
             self.classes_ = numpy.arange(len(self.priors))
             self.n_classes_ = len(self.priors)
             self.class_prior_ = self.priors
-        return(self)
+        return self
 
 
 def construct_random_ensemble(**kwargs):
@@ -131,7 +132,7 @@ def construct_random_ensemble(**kwargs):
     sig = inspect.signature(ExtraTreesClassifier)
     params.update({k: v for k, v in kwargs.items() if k in sig.parameters})
     estimator = ExtraTreesClassifier(**params)
-    return(estimator)
+    return estimator
 
 
 def construct_boost_ensemble(**kwargs):
@@ -283,7 +284,7 @@ def construct_decision_tree(**kwargs):
     tree_kws.update(kwargs)
     tree_ba = inspect_and_bind(DecisionTreeClassifier, **tree_kws)
     estimator = DecisionTreeClassifier(*tree_ba.args, **tree_ba.kwargs)
-    return(estimator)
+    return estimator
 
 
 def construct_preprocessor(**kwargs):
@@ -319,7 +320,7 @@ def construct_preprocessor(**kwargs):
     ('transformer', TfidfTransformer(*transformer_ba.args,
         **transformer_ba.kwargs)),
     ('decomposer', TruncatedSVD(*decomposer_ba.args, **decomposer_ba.kwargs))])
-    return(preprocessor)
+    return preprocessor
  
 
 def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
@@ -413,11 +414,11 @@ def construct_naive_bayes(preprocessor=None, **kwargs):
         estimator = Pipeline([
             ('normalizer', kwargs.get('normalizer', None)),
             ('classifier', kwargs.get('classifier', None))])
-    return(estimator)
+    return estimator
 
 
 def simple_split(x):
-    return(x.split());
+    return x.split() 
 
 
 def construct_model(weights, cvkwargs, gridkwargs, preproc=None):
@@ -485,7 +486,33 @@ def construct_model(weights, cvkwargs, gridkwargs, preproc=None):
             cv=sentid_cv, fit_params={
                 'classifier__sample_weight': weights['weight_by_node']},
             **gridkwargs)
-    return(searchers)
+    return searchers
+
+
+def construct_adaboost(base_estimator, **kwargs):
+    """
+    Parameters:
+    -----------
+    base_estimator: string
+        the class name of base estimator used within AdaBoost
+    """
+    params = {
+        'base_estimator': 
+            predictor_construct[base_estimator](**kwargs), # default is DecisionTre
+        'n_estimators': 50,                                # default is 50
+        'learning_rate': 1.0,                              # deafult is 1.0
+        'algorithm': 'SAMME.R',                            # default is SAMME.R, 
+                                                           # requires predict_proba in
+                                                           # base_estimator 
+        'random_state': None,
+    }
+    if isinstance(params['base_estimator'], Pipeline):
+        # only need classifier
+        params['base_estimator'] = params['base_estimator'].steps[-1][-1]
+    params.update(kwargs)
+    param_ba = inspect_and_bind(AdaBoostClassifier, **params)
+    estimator = AdaBoostClassifier(*param_ba.args, **param_ba.kwargs)
+    return estimator
 
 
 class _fit_and_score(object):
@@ -726,23 +753,26 @@ def construct_multiple_classifiers(preproc, predictor_maker, max_level, train_fe
   for k in disjoint_keys:
     del gridkwargs_pred[k]
 
-  
-  orig_steps = preproc.steps
-  orig_steps.extend([('normalizer', StandardScaler()), # adding StandardScaler
-                    ('reductor', construct_discriminant())]) # adding LDA
-  
-  preproc.set_params(steps = orig_steps)
-
   # ensure cvkwargs uses the same seed
   cvkwargs['random_state'] = os.getpid()
   estimators = [search_maker(predictor_maker(preprocessor=preproc, **kwargs), 
     **gridkwargs_pred, cv=StratifiedKFold(**cvkwargs)) for _ in range(max_level)] # include root level
 
+  # checking params has correct name
+  if not 'classifier__priors' in estimators[0].get_params() and \
+        'estimator__base_estimator__priors' in estimators[0].get_params():
+        assert(len(estimators) == 1)
+        estimators[0].param_grid['base_estimator__priors'] = \
+        estimators[0].param_grid['classifier__priors']
+        del estimators[0].param_grid['classifier__priors']
+
   logging.info("%d label estimators are constructed and start training ..." % max_level)
+
   levels = numpy.hstack(train_features['levels'])
   phrases = numpy.hstack(train_features['phrases']) # data type is object
   sentiments = numpy.hstack(train_features['sentiments'])
-  estimators = group_fit(levels, phrases, sentiments, preproc, estimators, max_level) 
+  estimators = group_fit(levels, phrases, sentiments, preproc, estimators, max_level) \
+
   logging.info("complete %d label estimators ..." % max_level)
   return estimators
 
@@ -868,6 +898,7 @@ predictor_construct = {
     'gnb': partial(construct_naive_bayes, classifier=clone(GaussianNB())),
     'mnb': partial(construct_naive_bayes, classifier=clone(MultinomialNB())),
     'dumb': construct_dumb_classifier,
+    'ada': construct_adaboost,
 }
 
 
@@ -974,6 +1005,68 @@ def run_single_classifier(csv_file, classifier_type, cvkwargs, gridkwargs, batch
     logging.info('dumping {}'.format(model_name))
 
 
+def multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
+    train_features, train_targets, cvkwargs, gridkwargs):
+    """
+    construct multiple classifiers for each level 
+    """
+    label_searchers = construct_multiple_classifiers(preproc, 
+        predictor_maker, max_level, train_features, train_targets,
+        cvkwargs, gridkwargs)
+    
+
+    if hasattr(label_searchers[0], 'refit') and not label_searchers[0].refit:  # need a clone
+        # iterate different label_predictors (pre-trained with different parameters)
+        transformers = []
+        for i, param in enumerate(label_searchers[0].cv_results_['params']):
+            scores = numpy.asarray([est.cv_results_['mean_test_score'][i]
+                for est in label_searchers])
+            logging.info('label_predictors fit with priors=%s accuracy=%s' %(
+                numpy.array2string(param['classifier__priors'], suppress_small=True, precision=3),
+                numpy.array2string(scores, suppress_small=True, precision=3)))
+            label_predictors = [clone(est.estimator).set_params(**param) 
+                                for est in label_searchers]
+            transformers.append(FunctionTransformer(
+                labels_to_attributes(preproc, vectorizer), 
+                validate=False, kw_args={'label_predictors': label_predictors}))
+    else: # use prefit
+        for i, est in enumerate(label_searchers):
+            class_prior_ = est.class_prior_
+            scores = est.cv_results_['mean_test_score']
+            logging.info('label_predictors fit with priors=%s accuracy=%s' %(
+                    numpy.array2string(class_prior_, suppress_small=True, precision=3),
+                    numpy.array2string(scores, suppress_small=True, precision=3)))
+        transformers.append(FunctionTransformer(
+            labels_to_attributes(preproc, vectorizer), 
+            validate=False, kw_args={'label_predictors': label_searchers}))
+    return transformers, label_searchers
+
+
+def boost_naives(preproc, clf_name, base_clf, vectorizer, max_level, 
+    train_features, train_targets, cvkwargs, gridkwargs):
+    """
+    """
+    predictor_maker = partial(predictor_construct[clf_name], base_clf)
+    
+    label_searchers = construct_multiple_classifiers(preproc, 
+        predictor_maker, max_level, train_features, train_targets,
+        cvkwargs, gridkwargs)
+
+    transformers = []
+    for i, param in enumerate(label_searchers[0].cv_results_['params']):
+        scores = numpy.asarray([est.cv_results_['mean_test_score'][i]
+            for est in label_searchers])
+        logging.info('label_predictors fit with priors=%s accuracy=%s' %(
+            numpy.array2string(param['base_estimator__priors'], suppress_small=True, precision=3),
+            numpy.array2string(scores, suppress_small=True, precision=3)))
+        label_predictors = [clone(est.estimator).set_params(**param) 
+                            for est in label_searchers]
+        transformers.append(FunctionTransformer(
+                labels_to_attributes(preproc, vectorizer), 
+                validate=False, kw_args={'label_predictors': label_predictors}))
+    return transformers, label_searchers
+
+
 def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level, 
     pretrain_loc, cvkwargs, gridkwargs, batch_mode=False, presort=False, n_rows=-1, 
     n_classes=5, **kwargs):
@@ -1014,50 +1107,36 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
     from sklearn.model_selection import _search
     from unittest.mock import patch 
 
+    preproc, (train_features, train_targets), (valid_features, valid_targets), \
+        (test_features, test_targets) = preload_helper(
+            csv_file, pretrain_loc=pretrain_loc, n_rows=n_rows)
+
     model_name = 'multi.model'
     classifier_maker = classifier_construct[classifier_type]
     model_name = '%s_%s_%s'%(classifier_type, predictor_type, model_name)
 
-    preproc, (train_features, train_targets), (valid_features, valid_targets), \
-        (test_features, test_targets) = preload_helper(
-            csv_file, pretrain_loc=pretrain_loc, n_rows=n_rows)
-    
-    # calling function which will train n-independent label predictors
-    predictor_maker = predictor_construct[predictor_type]
-    label_searchers = construct_multiple_classifiers(preproc, 
-        predictor_maker, max_level, train_features, train_targets,
-        cvkwargs, gridkwargs)
-    
-    # construct the final model
+      # construct the final model
     vectorizer = DictVectorizer(sparse=(classifier_type!='boost'))
     classifier = Pipeline(
         [('transformer', None),
          ('classifier', None)])
 
-    if hasattr(label_searchers[0], 'refit') and not label_searchers[0].refit:  # need a clone
-        # iterate different label_predictors (pre-trained with different parameters)
-        transformers = []
-        for i, param in enumerate(label_searchers[0].cv_results_['params']):
-            scores = numpy.asarray([est.cv_results_['mean_test_score'][i]
-                for est in label_searchers])
-            logging.info('label_predictors fit with priors=%s accuracy=%s' %(
-                numpy.array2string(param['classifier__priors'], suppress_small=True, precision=3),
-                numpy.array2string(scores, suppress_small=True, precision=3)))
-            label_predictors = [clone(est.estimator).set_params(**param) 
-                                for est in label_searchers]
-            transformers.append(FunctionTransformer(
-                labels_to_attributes(preproc, vectorizer), 
-                validate=False, kw_args={'label_predictors': label_predictors}))
-    else: # use prefit
-        for i, est in enumerate(label_searchers):
-            class_prior_ = est.class_prior_
-            scores = est.cv_results_['mean_test_score']
-            logging.info('label_predictors fit with priors=%s accuracy=%s' %(
-                    numpy.array2string(class_prior_, suppress_small=True, precision=3),
-                    numpy.array2string(scores, suppress_small=True, precision=3)))
-        transformers.append(FunctionTransformer(
-            labels_to_attributes(preproc, vectorizer), 
-            validate=False, kw_args={'label_predictors': label_searchers}))
+    # update
+    orig_steps = preproc.steps
+    orig_steps.extend([('normalizer', StandardScaler())]), # adding StandardScaler
+    preproc.set_params(steps = orig_steps)
+    
+    # calling function which will train n-independent label predictors
+    if predictor_type in predictor_construct:
+        predictor_maker = predictor_construct[predictor_type]
+        transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
+            train_features, train_targets, cvkwargs, gridkwargs)
+    else:
+        if max_level != 1:
+            max_level = 1
+        clf_name, base_clf = predictor_type.split('_')
+        transformers, label_searchers = boost_naives(preproc, clf_name, base_clf, vectorizer, max_level,
+            train_features, train_targets, cvkwargs, gridkwargs)
 
     gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
     
@@ -1191,7 +1270,7 @@ def main(*args):
         help="loading pretrained word-embeddings")
     parser.add_argument("--classifier", default="tree", 
         help="specifying the type of top classifier, options are [tree|ensemble|boost]")
-    parser.add_argument("--predictor", default="gnb", choices=['gnb', 'mnb', 'dumb'],
+    parser.add_argument("--predictor", default="gnb", choices=['gnb', 'dumb', 'ada_gnb'],
         help="specifying the type of label predictors, options are [gnb|mnb|dumb]")
     parser.add_argument("--seed", type=int, default=None, 
         help="specify the seed used for data splitting and modeling")

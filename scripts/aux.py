@@ -265,8 +265,7 @@ def group_fit(levels:numpy.ndarray, phrases:numpy.ndarray, sentiments:numpy.ndar
     try:
         proced = trans.transform(proced)
     except NotFittedError as e:
-        proced = trans.fit_transform(proced, sentiments)
-        #proced = trans.fit_transform(proced, levels)
+        proced = trans.fit_transform(proced, levels)
 
 
   Xt = [[] for _ in numpy.arange(max_level)]
@@ -306,7 +305,6 @@ class labels_to_attributes(object):
         self.n_classes = n_classes
         self.using_probs = using_probs
 
-
     @cython.locals(i=cython.int, level=cython.int, start=cython.int, end=cython.int)
     def __call__(self, raw_data:pandas.DataFrame, y:list=None, 
         label_predictors:list=None) -> typing.Iterable:
@@ -328,8 +326,11 @@ class labels_to_attributes(object):
       phrases = numpy.hstack(raw_data['phrases']) # data type is object
       sentiments = numpy.hstack(raw_data['sentiments'])
 
-      n_samples = len(levels)
-      Xt = self.preproc.transform(phrases)  # phrases to matrix
+      try:
+        check_is_fitted(label_predictors[0], 'theta_')
+      except AttributeError:
+        group_fit(levels, phrases, sentiments, self.preproc, label_predictors, 
+            len(label_predictors))
 
       uniq_levels = numpy.arange(1, numpy.unique(levels).max() + 1)  # not reduced levels
       
@@ -337,6 +338,7 @@ class labels_to_attributes(object):
       ' with %d levels (maximal level = %d)'%(
         str(self.using_probs), uniq_levels[-1], len(label_predictors)))
 
+      n_samples = len(levels)
       if self.using_probs:
         sentiment_probs = numpy.empty((n_samples, self.n_classes),
             dtype=numpy.float32)
@@ -345,12 +347,7 @@ class labels_to_attributes(object):
         sentiment_probs = numpy.empty((n_samples,), dtype=numpy.float32)
         func_name = 'predict'
 
-      try:
-        check_is_fitted(label_predictors[0], 'theta_')
-      except AttributeError:
-        group_fit(levels, phrases, sentiments, self.preproc, label_predictors, 
-            len(label_predictors))
-
+      Xt = self.preproc.transform(phrases)  # phrases to matrix
       for level in uniq_levels:
         if level >= len(label_predictors):
             est_id = -1
@@ -358,6 +355,7 @@ class labels_to_attributes(object):
             est_id = level - 1
         sentiment_probs[levels == level] = \
             getattr(label_predictors[est_id], func_name)(Xt[levels == level])
+
 
       stack_sentprobs = numpy.empty((len(raw_data),), dtype=numpy.object)
       start, end = 0, 0
@@ -367,6 +365,7 @@ class labels_to_attributes(object):
             numpy.ones(end - start - 1))
         stack_sentprobs[i] = sentiment_probs[start:end]
         start = end
+
       features = process_joint_features((stack_sentprobs, raw_data), 
         n_levels=uniq_levels[-1], vectorizer=self.vectorizer)
       return features
