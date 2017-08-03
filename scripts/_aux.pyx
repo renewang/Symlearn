@@ -260,9 +260,6 @@ def group_fit(features:pandas.DataFrame, preproc:Pipeline,
   """
   fitting a list of naive bayes estimators
   """
-  levels = numpy.hstack(features['levels']) 
-  phrases = numpy.hstack(features['phrases'])   # data type is object
-  sentiments = numpy.hstack(features['sentiments'])
 
   # transform by preproc
   proced = phrases.tolist()
@@ -270,7 +267,7 @@ def group_fit(features:pandas.DataFrame, preproc:Pipeline,
     try:
         proced = trans.transform(proced)
     except NotFittedError as e:
-        proced = trans.fit_transform(proced)
+        proced = trans.fit_transform(proced, levels)
 
 
   Xt = [[] for _ in numpy.arange(max_level)]
@@ -309,7 +306,10 @@ def group_fit(features:pandas.DataFrame, preproc:Pipeline,
   return estimators
 
 
+@cython.cclass
 class labels_to_attributes(object):
+
+    cython.declare(n_classes=cython.int, using_probs=cython.bint)
 
     def __init__(self, preproc:Pipeline, vectorizer:DictVectorizer, 
                 using_probs:bool=True, n_classes:int=5):

@@ -128,7 +128,7 @@ def check_treebased_phrases(csv_file, n_rows=None, memory_map=False):
     cur_dialect.skipinitialspace=True
     dtypes_ = {'tree_id': numpy.int16, 'node_id': numpy.int16, 'sentiment': numpy.int8,
             'level': numpy.int16, 'start_pos': numpy.int32, 'end_pos': numpy.int32}
-    phrases = pandas.read_table(csv_file, header=0, dialect=cur_dialect,
+    phrases = pandas.read_table(csv_file, delimiter=',', header=0, dialect=cur_dialect,
             nrows=n_rows, memory_map=memory_map, dtype= dtypes_,
             index_col=False)  # adding index_col=False to disable using first
                               # column as index

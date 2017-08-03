@@ -289,7 +289,7 @@ def group_fit(levels:numpy.ndarray, phrases:numpy.ndarray, sentiments:numpy.ndar
     xt = numpy.vstack(xt)
     yt = numpy.hstack(yt)
     est.fit(xt, yt)
-
+    
   return estimators
 
 
