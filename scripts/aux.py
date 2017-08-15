@@ -4,6 +4,9 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.feature_extraction.dict_vectorizer import DictVectorizer
 from sklearn.exceptions import NotFittedError
 from sklearn.metrics import brier_score_loss
+from sklearn.naive_bayes import GaussianNB
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import AdaBoostClassifier
 
 from copy import deepcopy
 from itertools import groupby
@@ -12,6 +15,7 @@ from operator import itemgetter
 
 from stanfordSentimentTreebank import preprocess_data
 
+import warnings
 import typing
 import logging
 import pandas
@@ -135,7 +139,9 @@ def process_joint_features(data:typing.Tuple, vectorizer:DictVectorizer=None,
             elif all(masked_levels[cur_start:cur_end] <= l):
                 break
 
-    if not vectorizer:  # no valid vectorizer is availabel
+    # ensure not including root level
+    assert(all(numpy.hstack([list(map(lambda x: x[0] != 0, s.keys())) for s in samples])))
+    if not vectorizer:  # no valid vectorizer is available
         return samples
 
     try:
@@ -326,9 +332,25 @@ class labels_to_attributes(object):
       phrases = numpy.hstack(raw_data['phrases']) # data type is object
       sentiments = numpy.hstack(raw_data['sentiments'])
 
+      if isinstance(label_predictors[0], Pipeline):
+        classifier = label_predictors[0].steps[-1][-1]
+      else:
+        classifier = label_predictors[0]    
+
+      # checking if classifier is meta estimator
+      features_ = None
+      if isinstance(classifier, CalibratedClassifierCV):
+        features_ = 'calibrated_classifiers_'
+      elif isinstance(classifier, AdaBoostClassifier):
+        features_ = 'estimators_'
+      elif isinstance(classifier, GaussianNB):
+        features_ = 'theta_'
+
+    
       try:
-        check_is_fitted(label_predictors[0], 'theta_')
+        check_is_fitted(classifier, features_)
       except AttributeError:
+        warnings.warn("refitting on dataset of size %d" %(len(phrases)), UserWarning)
         group_fit(levels, phrases, sentiments, self.preproc, label_predictors, 
             len(label_predictors))
 
@@ -347,6 +369,9 @@ class labels_to_attributes(object):
         sentiment_probs = numpy.empty((n_samples,), dtype=numpy.float32)
         func_name = 'predict'
 
+      # introduce attention nan to avoid assign probability to root level
+      sentiment_probs[levels == 0] = numpy.nan 
+
       Xt = self.preproc.transform(phrases)  # phrases to matrix
       for level in uniq_levels:
         if level >= len(label_predictors):
@@ -356,13 +381,13 @@ class labels_to_attributes(object):
         sentiment_probs[levels == level] = \
             getattr(label_predictors[est_id], func_name)(Xt[levels == level])
 
-
       stack_sentprobs = numpy.empty((len(raw_data),), dtype=numpy.object)
       start, end = 0, 0
       for i, cur_sent in enumerate(raw_data['sentiments']):
         end += len(cur_sent)
         numpy.testing.assert_array_almost_equal(sentiment_probs[start + 1: end].sum(axis=1), 
             numpy.ones(end - start - 1))
+        assert(not 0 in levels[start + 1 : end])
         stack_sentprobs[i] = sentiment_probs[start:end]
         start = end
 

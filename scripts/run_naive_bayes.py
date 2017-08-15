@@ -15,10 +15,8 @@ from sklearn.ensemble import (ExtraTreesClassifier, GradientBoostingClassifier,
 from sklearn.calibration import _SigmoidCalibration as SoftMaxScaler
 from sklearn.dummy import DummyClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.calibration import _CalibratedClassifier as CalibratedClassifier
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection._search import BaseSearchCV
+from sklearn.multiclass import OneVsRestClassifier
 
 from contextlib import contextmanager
 from functools import partial
@@ -199,6 +197,142 @@ def construct_discriminant(**kwargs):
     return estimator
 
 
+def construct_decision_tree(**kwargs):
+    """
+    providing default parameters for construct a scikit-learn decision tree
+    """
+    tree_kws = {'criterion': 'entropy',           # measure split. options: "gini" impurity and cross
+                                                  # "entropy"
+                'splitter': 'best',               # algorithm for split a node. options: best split and random split
+                'max_features': 'auto',           # criterion for split features. 
+                                                  # options: None for no split using n_features
+                                                  # auto / sqrt: taking sqrt
+                                                  # log2: taking log2 
+                'max_depth': None,                # the max depth for tree: None for splitting till all leaves are pure
+                                                  # this can work with the min_sample_split and turn off 
+                                                  # if max_leaf_node is not None
+                'min_samples_split': 100,         # the minimal number of samples to split a node
+                'min_samples_leaf': 100,          # the minimal sample required to be in leaf node
+                'min_weight_fraction_leaf': 0.05, # the fraction of samples required to be in the leaf
+                'max_leaf_nodes': None,           # the maximal number of leaf nodes to be grown
+                'class_weight': 'balanced',       # the weight to balance target classes
+                'random_state': None,             # random seed
+                'presort'     : 'auto',           # indicates if using sorting
+                                                  # to speed up
+                'min_impurity_split': 1e-7        # the threshold of impurity for early stopping
+               }
+    tree_kws.update(kwargs)
+    tree_ba = inspect_and_bind(DecisionTreeClassifier, **tree_kws)
+    estimator = DecisionTreeClassifier(*tree_ba.args, **tree_ba.kwargs)
+    return estimator
+
+
+def construct_naive_bayes(preprocessor=None, **kwargs):
+    """
+    providing default construction for naive bayes
+    """
+    if preprocessor is None:
+        # construct a un-trained word processing from scratch
+        preprocessor = construct_preprocessor(**kwargs)
+        estimator = Pipeline([
+            ('preprocessor', preprocessor),
+            ('normalizer', kwargs.get('normalizer', None)),
+            ('classifier', kwargs.get('classifier', None))])
+    else:
+        estimator = Pipeline([
+            ('normalizer', kwargs.get('normalizer', None)),
+            ('classifier', kwargs.get('classifier', None))])
+    return estimator
+
+
+def construct_adaboost(base_estimator, **kwargs):
+    """
+    Parameters:
+    -----------
+    base_estimator: string
+        the class name of base estimator used within AdaBoost
+    """
+    params = {
+        'base_estimator': 
+            predictor_construct[base_estimator](**kwargs), # default is DecisionTre
+        'n_estimators': 10,                                # default is 50
+        'learning_rate': 1.0,                              # deafult is 1.0
+        'algorithm': 'SAMME.R',                            # default is SAMME.R, 
+                                                           # requires predict_proba in
+                                                           # base_estimator 
+        'random_state': None,
+    }
+    if isinstance(params['base_estimator'], Pipeline):
+        # only need classifier
+        params['base_estimator'] = params['base_estimator'].steps[-1][-1]
+    params.update(kwargs)
+    param_ba = inspect_and_bind(AdaBoostClassifier, **params)
+    estimator = AdaBoostClassifier(*param_ba.args, **param_ba.kwargs)
+    return estimator
+
+
+def construct_ovr(base_estimator, **kwargs):
+    """
+    Parameters:
+    -----------
+    base_estimator: string
+        the class name of base estimator used within AdaBoost
+    """
+    steps = []
+    base_estimator = predictor_construct[base_estimator](**kwargs)
+    if isinstance(base_estimator, Pipeline):
+        # only need classifier
+        steps = [step for step in base_estimator.steps[:-1]]
+        base_estimator = base_estimator.steps[-1][-1]
+    
+    params = {
+        'base_estimator': base_estimator,
+        'method': 'sigmoid',                                        # sigmoid or isotonic
+        'cv' : StratifiedShuffleSplit(n_splits=1, test_size=0.2),   # reserving additional one as fitting validation  
+    }
+    params.update(kwargs)
+    param_ba = inspect_and_bind(CalibratedClassifierCV, **params)
+    estimator = Pipeline(steps + 
+        [('classifier', CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs))])
+    return estimator
+
+
+def construct_preprocessor(**kwargs):
+    """
+    providing default construction of preprocessor
+    """
+    new_kwargs = {
+        'strip_accents': 'unicode',
+        'tokenizer': simple_split,
+        'analyzer': 'word',
+        # work-around for segfault,
+        # https://github.com/scikit-learn/scikit-learn/issues/7626
+        'algorithm': 'arpack',
+        'sublinear_tf': True,
+        'use_idf': True}
+    new_kwargs.update(kwargs)
+
+    vocab = kwargs.get('vocabulary', None)
+    if not vocab: # compute from training set
+        vectorizer_ba = inspect_and_bind(CountVectorizer, **new_kwargs)
+        extractor = CountVectorizer(*vectorizer_ba.args, **vectorizer_ba.kwargs)
+    else:
+        new_kwargs.update({'vocab_file': vocab})
+        extractor_ba = inspect_and_bind(count_vectorizer, **new_kwargs)
+        extractor = FunctionTransformer(count_vectorizer(*extractor_ba.args,
+            **extractor_ba.kwargs), validate=False)
+        
+    transformer_ba = inspect_and_bind(TfidfTransformer, **new_kwargs)
+    decomposer_ba = inspect_and_bind(TruncatedSVD, **new_kwargs)
+
+    preprocessor = Pipeline([
+    ('vectorizer', extractor),
+    ('transformer', TfidfTransformer(*transformer_ba.args,
+        **transformer_ba.kwargs)),
+    ('decomposer', TruncatedSVD(*decomposer_ba.args, **decomposer_ba.kwargs))])
+    return preprocessor
+ 
+
 def train_test_split(n_samples, **kwargs):
     """
     function to make train or test split by random or by the predefine split
@@ -259,72 +393,6 @@ def gc_context():
     if not gc.isenabled():
         gc.enable()
         
-
-def construct_decision_tree(**kwargs):
-    """
-    providing default parameters for construct a scikit-learn decision tree
-    """
-    tree_kws = {'criterion': 'entropy',           # measure split. options: "gini" impurity and cross
-                                                  # "entropy"
-                'splitter': 'best',               # algorithm for split a node. options: best split and random split
-                'max_features': 'auto',           # criterion for split features. 
-                                                  # options: None for no split using n_features
-                                                  # auto / sqrt: taking sqrt
-                                                  # log2: taking log2 
-                'max_depth': None,                # the max depth for tree: None for splitting till all leaves are pure
-                                                  # this can work with the min_sample_split and turn off 
-                                                  # if max_leaf_node is not None
-                'min_samples_split': 100,         # the minimal number of samples to split a node
-                'min_samples_leaf': 100,          # the minimal sample required to be in leaf node
-                'min_weight_fraction_leaf': 0.05, # the fraction of samples required to be in the leaf
-                'max_leaf_nodes': None,           # the maximal number of leaf nodes to be grown
-                'class_weight': 'balanced',       # the weight to balance target classes
-                'random_state': None,             # random seed
-                'presort'     : 'auto',           # indicates if using sorting
-                                                  # to speed up
-                'min_impurity_split': 1e-7        # the threshold of impurity for early stopping
-               }
-    tree_kws.update(kwargs)
-    tree_ba = inspect_and_bind(DecisionTreeClassifier, **tree_kws)
-    estimator = DecisionTreeClassifier(*tree_ba.args, **tree_ba.kwargs)
-    return estimator
-
-
-def construct_preprocessor(**kwargs):
-    """
-    providing default construction of preprocessor
-    """
-    new_kwargs = {
-        'strip_accents': 'unicode',
-        'tokenizer': simple_split,
-        'analyzer': 'word',
-        # work-around for segfault,
-        # https://github.com/scikit-learn/scikit-learn/issues/7626
-        'algorithm': 'arpack',
-        'sublinear_tf': True,
-        'use_idf': True}
-    new_kwargs.update(kwargs)
-
-    vocab = kwargs.get('vocabulary', None)
-    if not vocab: # compute from training set
-        vectorizer_ba = inspect_and_bind(CountVectorizer, **new_kwargs)
-        extractor = CountVectorizer(*vectorizer_ba.args, **vectorizer_ba.kwargs)
-    else:
-        new_kwargs.update({'vocab_file': vocab})
-        extractor_ba = inspect_and_bind(count_vectorizer, **new_kwargs)
-        extractor = FunctionTransformer(count_vectorizer(*extractor_ba.args,
-            **extractor_ba.kwargs), validate=False)
-        
-    transformer_ba = inspect_and_bind(TfidfTransformer, **new_kwargs)
-    decomposer_ba = inspect_and_bind(TruncatedSVD, **new_kwargs)
-
-    preprocessor = Pipeline([
-    ('vectorizer', extractor),
-    ('transformer', TfidfTransformer(*transformer_ba.args,
-        **transformer_ba.kwargs)),
-    ('decomposer', TruncatedSVD(*decomposer_ba.args, **decomposer_ba.kwargs))])
-    return preprocessor
- 
 
 def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
     """
@@ -402,24 +470,6 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
         (valid_features, targets[valid]), (test_features, targets[test])
 
 
-def construct_naive_bayes(preprocessor=None, **kwargs):
-    """
-    providing default construction for naive bayes
-    """
-    if preprocessor is None:
-        # construct a un-trained word processing from scratch
-        preprocessor = construct_preprocessor(**kwargs)
-        estimator = Pipeline([
-            ('preprocessor', preprocessor),
-            ('normalizer', kwargs.get('normalizer', None)),
-            ('classifier', kwargs.get('classifier', None))])
-    else:
-        estimator = Pipeline([
-            ('normalizer', kwargs.get('normalizer', None)),
-            ('classifier', kwargs.get('classifier', None))])
-    return estimator
-
-
 def simple_split(x):
     return x.split() 
 
@@ -490,58 +540,6 @@ def construct_model(weights, cvkwargs, gridkwargs, preproc=None):
                 'classifier__sample_weight': weights['weight_by_node']},
             **gridkwargs)
     return searchers
-
-
-def construct_adaboost(base_estimator, **kwargs):
-    """
-    Parameters:
-    -----------
-    base_estimator: string
-        the class name of base estimator used within AdaBoost
-    """
-    params = {
-        'base_estimator': 
-            predictor_construct[base_estimator](**kwargs), # default is DecisionTre
-        'n_estimators': 10,                                # default is 50
-        'learning_rate': 1.0,                              # deafult is 1.0
-        'algorithm': 'SAMME.R',                            # default is SAMME.R, 
-                                                           # requires predict_proba in
-                                                           # base_estimator 
-        'random_state': None,
-    }
-    if isinstance(params['base_estimator'], Pipeline):
-        # only need classifier
-        params['base_estimator'] = params['base_estimator'].steps[-1][-1]
-    params.update(kwargs)
-    param_ba = inspect_and_bind(AdaBoostClassifier, **params)
-    estimator = AdaBoostClassifier(*param_ba.args, **param_ba.kwargs)
-    return estimator
-
-
-def construct_ovr(base_estimator, **kwargs):
-    """
-    Parameters:
-    -----------
-    base_estimator: string
-        the class name of base estimator used within AdaBoost
-    """
-    steps = []
-    base_estimator = predictor_construct[base_estimator](**kwargs)
-    if isinstance(base_estimator, Pipeline):
-        # only need classifier
-        steps = [step for step in base_estimator.steps[:-1]]
-        base_estimator = base_estimator.steps[-1][-1]
-    
-    params = {
-        'base_estimator': base_estimator,
-        'method': 'sigmoid',                                        # sigmoid or isotonic
-        'cv' : StratifiedShuffleSplit(n_splits=1, test_size=0.2),   # reserving additional one as fitting validation  
-    }
-    params.update(kwargs)
-    param_ba = inspect_and_bind(CalibratedClassifierCV, **params)
-    estimator = Pipeline(steps + 
-        [('classifier', CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs))])
-    return estimator
 
 
 class _fit_and_score(object):
@@ -669,141 +667,6 @@ def parallel_fit(estimator, X, y=None, prealloc=None,  parameters={},
         return ret
 
 
-def cal_learning_curve(clf, train_features, train_targets, **kwargs):
-    """
-    a simple wrapper function to supplement to the scikit-learn learning_curve
-    module in order to customize inputs
-    Parameters
-    ----------
-    @param clf: scikit-learn BaseEstimator instance
-        needs to have predict or scores methods for performance evaluation
-    @param train_features: numpy.ndarray, scipy.sparse.spmatrix or list
-        providing the features for training
-    @param train_targets: numpy.ndarray or list
-        providing the true labels for performance evaluation
-    @param kwargs: dict
-        additional keywords passed into scikit-learn learning_curve function
-    """
-
-    from unittest.mock import patch 
-    from sklearn.model_selection import _validation
-
-    samplesizes = kwargs.get("train_sizes") 
-    learning_func = kwargs.pop("learn_func", learning_curve)
-    if isinstance(train_features, (numpy.ndarray, scipy.sparse.spmatrix)):
-        data_ = train_features
-    elif isinstance(train_features, (pandas.DataFrame, pandas.Series)):
-        data_ = train_features.values 
-    elif isinstance(train_features, (dict)): 
-        data_ = pandas.DataFrame(train_features).values
-    ttl_size = (data_.size * data_.dtype.itemsize * numpy.max(samplesizes)) / (1024**2)
-    logging.info('start training with training size %d (%.2f MB in memory)' % (
-            data_.shape[0] * numpy.max(samplesizes), ttl_size))
-    with gc_context() as gc_siwtch:
-        start_time = time.time()
-        try:
-            with patch.object(_validation, '_fit_and_score',  new_callable=_fit_and_score):
-                learning_res = learning_curve(clf, train_features, train_targets, **kwargs)
-        except TypeError as e:
-            if isinstance(train_features, scipy.sparse.spmatrix):
-                with patch.object(_validation, '_fit_and_score',  new_callable=_fit_and_score):
-                    learning_res = learning_curve(clf, train_features.toarray(),
-                        train_targets, **kwargs)
-            else:
-                raise e
-        end_time = time.time()
-    logging.info('complete training in total time %.2f seconds' % (end_time - start_time))
-    logging.info('training score is {!r}'.format(
-            numpy.array_repr(learning_res[1].mean(axis=1), precision=3, suppress_small=True)))
-    logging.info('validate score is {!r}'.format(
-            numpy.array_repr(learning_res[2].mean(axis=1), precision=3, suppress_small=True)))
-    return(learning_res)
-
-
-def construct_multiple_classifiers(preproc, predictor_maker, max_level, train_features, train_targets,
-                                   cvkwargs, gridkwargs, n_classes=5, **kwargs):
-  """
-  group phrases into levels and test on their accuracy with sentence only classifier to see 
-    1. if there’s need to re-construct vocabulary set and truncated SVD 
-    2. if there’s enough training examples for each level
-
-  Parameters
-  ----------
-  @param preproc: sklearn.TransformMixin instance
-    used to transform phrases into word vector based on BOW
-  @param predictor_maker: sklearn.BaseEstimator instance
-    class to constructor label_predictors for each level within max_level
-  @param max_level: int
-    the maximal integer used to construct label_predictors to ensure the training examples used
-    sufficiently large
-  @param train_features: pd.DataFrame
-    store features in pandas.DataFrame
-  @param train_targets: numpy.ndarray
-    store the root sentiments (no effect here)
-  @param cvkwargs: dict
-    keyword arguments to pass to cross-validation isntance constructor
-  @param gridkwargs: dict
-    keyword arguments to pass to GridSearchCV instance excluding cv
-  @param n_classes: int
-    the number of sentiment classes used
-  @param kwargs: dict
-    keyword arguments passing to predictor_maker
-  """
-  
-  # ensure refit is not True also avoid inplace modification
-  gridkwargs_pred = gridkwargs.copy()
-  strategy_ = kwargs.get('strategy', 'biased')
-
-  if strategy_  == 'biased':
-     gridkwargs_pred['refit'] = False
-     params = [
-                (1/n_classes) * numpy.ones(n_classes),  # uniform
-                *(numpy.asarray(arr)/numpy.sum(arr) for arr in [
-                [0.8, 0.05, 0.05, 0.05, 0.05], # class 0 dominating
-                [0.05, 0.8, 0.05, 0.05, 0.05], # class 1 dominating
-                [0.05, 0.05, 0.8, 0.05, 0.05], # class 2 dominating
-                [0.05, 0.05, 0.05, 0.8, 0.05], # class 3 dominating
-                [0.05, 0.05, 0.05, 0.05, 0.8], # class 4 dominating
-                ])
-     ]
-     search_maker = partial(GridSearchCV, param_grid={'classifier__priors': params})
-  else:
-     gridkwargs_pred['refit'] = True
-     gridkwargs_pred['scoring'] = 'neg_log_loss'
-     search_maker = partial(GridSearchCV, param_grid={'classifier__method': ['sigmoid']})
-
-
-  # filter unwanted kwargs
-  sig = inspect.signature(search_maker, follow_wrapped=True)
-  disjoint_keys = set(gridkwargs_pred.keys()) - set(sig.parameters.keys())
-  for k in disjoint_keys:
-    del gridkwargs_pred[k]
-
-  # ensure cvkwargs uses the same seed
-  cvkwargs['random_state'] = os.getpid()
-  estimators = [search_maker(predictor_maker(preprocessor=preproc, **kwargs), 
-    **gridkwargs_pred, cv=StratifiedKFold(**cvkwargs)) for _ in range(max_level)] # include root level
-
-  if strategy_ == 'biased':
-    # checking params has correct name:
-    if not 'classifier__priors' in estimators[0].get_params() and \
-        'estimator__base_estimator__priors' in estimators[0].get_params():
-        assert(len(estimators) == 1)
-        estimators[0].param_grid['base_estimator__priors'] = \
-        estimators[0].param_grid['classifier__priors']
-        del estimators[0].param_grid['classifier__priors']
-
-  logging.info("%d label estimators are constructed and start training ..." % max_level)
-
-  levels = numpy.hstack(train_features['levels'])
-  phrases = numpy.hstack(train_features['phrases']) # data type is object
-  sentiments = numpy.hstack(train_features['sentiments'])
-  estimators = group_fit(levels, phrases, sentiments, preproc, estimators, max_level) \
-
-  logging.info("complete %d label estimators ..." % max_level)
-  return estimators
-
-
 def process_word_features(csv_file, **kwargs):
     """
     process word features and smooth out the vocabulary set by collecting rare
@@ -913,6 +776,175 @@ def process_word_features(csv_file, **kwargs):
             joblib.parallel(joblib.delayed(parallel_fit)(clone(decomposer_), Xt, None,
                 Xtvars, param) for param in ParameterGrid(params))
             logging.info('complete parallel fitting and store in %s' % mmap_fn)
+
+
+def cal_learning_curve(clf, train_features, train_targets, **kwargs):
+    """
+    a simple wrapper function to supplement to the scikit-learn learning_curve
+    module in order to customize inputs
+    Parameters
+    ----------
+    @param clf: scikit-learn BaseEstimator instance
+        needs to have predict or scores methods for performance evaluation
+    @param train_features: numpy.ndarray, scipy.sparse.spmatrix or list
+        providing the features for training
+    @param train_targets: numpy.ndarray or list
+        providing the true labels for performance evaluation
+    @param kwargs: dict
+        additional keywords passed into scikit-learn learning_curve function
+    """
+
+    from unittest.mock import patch 
+    from sklearn.model_selection import _validation
+
+    samplesizes = kwargs.get("train_sizes") 
+    learning_func = kwargs.pop("learn_func", learning_curve)
+    if isinstance(train_features, (numpy.ndarray, scipy.sparse.spmatrix)):
+        data_ = train_features
+    elif isinstance(train_features, (pandas.DataFrame, pandas.Series)):
+        data_ = train_features.values 
+    elif isinstance(train_features, (dict)): 
+        data_ = pandas.DataFrame(train_features).values
+    ttl_size = (data_.size * data_.dtype.itemsize * numpy.max(samplesizes)) / (1024**2)
+    logging.info('start training with training size %d (%.2f MB in memory)' % (
+            data_.shape[0] * numpy.max(samplesizes), ttl_size))
+    with gc_context() as gc_siwtch:
+        start_time = time.time()
+        try:
+            with patch.object(_validation, '_fit_and_score',  new_callable=_fit_and_score):
+                learning_res = learning_curve(clf, train_features, train_targets, **kwargs)
+        except TypeError as e:
+            if isinstance(train_features, scipy.sparse.spmatrix):
+                with patch.object(_validation, '_fit_and_score',  new_callable=_fit_and_score):
+                    learning_res = learning_curve(clf, train_features.toarray(),
+                        train_targets, **kwargs)
+            else:
+                raise e
+        end_time = time.time()
+    logging.info('complete training in total time %.2f seconds' % (end_time - start_time))
+    logging.info('training score is {!r}'.format(
+            numpy.array_repr(learning_res[1].mean(axis=1), precision=3, suppress_small=True)))
+    logging.info('validate score is {!r}'.format(
+            numpy.array_repr(learning_res[2].mean(axis=1), precision=3, suppress_small=True)))
+    return(learning_res)
+
+
+def biased_prior_experiment(predictors, train_features, train_targets, cvkwargs, gridkwargs, 
+    n_classes=5):
+    """
+    passing preset priors for experimenting label predictors
+    """
+    # ensure refit is not True also avoid inplace modification
+    gridkwargs_pred = gridkwargs.copy()
+    gridkwargs_pred['refit'] = False
+    params = [
+                (1/n_classes) * numpy.ones(n_classes),  # uniform
+                *(numpy.asarray(arr)/numpy.sum(arr) for arr in [
+                [0.8, 0.05, 0.05, 0.05, 0.05], # class 0 dominating
+                [0.05, 0.8, 0.05, 0.05, 0.05], # class 1 dominating
+                [0.05, 0.05, 0.8, 0.05, 0.05], # class 2 dominating
+                [0.05, 0.05, 0.05, 0.8, 0.05], # class 3 dominating
+                [0.05, 0.05, 0.05, 0.05, 0.8], # class 4 dominating
+                ])
+    ]
+    search_maker = partial(GridSearchCV, param_grid={'classifier__priors': params})
+    # filter unwanted kwargs
+    sig = inspect.signature(search_maker, follow_wrapped=True)
+    disjoint_keys = set(gridkwargs_pred.keys()) - set(sig.parameters.keys())
+    for k in disjoint_keys:
+        del gridkwargs_pred[k]
+
+    # ensure cvkwargs uses the same seed
+    cvkwargs['random_state'] = os.getpid()
+    estimators = [search_maker(predictor, **gridkwargs_pred, cv=StratifiedKFold(**cvkwargs)) 
+            for predictor in predictors] # include root level
+
+    # checking params has correct name:
+    if not 'classifier__priors' in estimators[0].get_params() and \
+        'estimator__base_estimator__priors' in estimators[0].get_params():
+        assert(len(estimators) == 1)
+        estimators[0].param_grid['base_estimator__priors'] = \
+        estimators[0].param_grid['classifier__priors']
+        del estimators[0].param_grid['classifier__priors']
+
+    logging.info("%d label estimators are constructed and start training ..." % max_level)
+    
+    levels = numpy.hstack(train_features['levels'])
+    phrases = numpy.hstack(train_features['phrases']) # data type is object
+    sentiments = numpy.hstack(train_features['sentiments'])
+    estimators = group_fit(levels, phrases, sentiments, preproc, estimators, max_level)
+
+    logging.info("complete %d label estimators ..." % max_level)
+
+    return estimators
+
+
+def construct_multiple_classifiers(preproc, predictor_maker, max_level, **kwargs):
+    """
+    group phrases into levels and test on their accuracy with sentence only classifier to see 
+        1. if there’s need to re-construct vocabulary set and truncated SVD 
+        2. if there’s enough training examples for each level
+
+    Parameters
+    ----------
+    @param preproc: sklearn.TransformMixin instance
+        used to transform phrases into word vector based on BOW
+    @param predictor_maker: sklearn.BaseEstimator instance
+        class to constructor label_predictors for each level within max_level
+    @param max_level: int
+        the maximal integer used to construct label_predictors to ensure the training examples used
+        sufficiently large
+    @param kwargs: dict
+        keyword arguments passing to predictor_maker
+    """
+    estimators = [predictor_maker(preprocessor=preproc, **kwargs) for _ in range(max_level)]
+    return estimators
+
+def multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
+    train_features, train_targets, cvkwargs, gridkwargs, strategy, **modelkwargs):
+    """
+    construct multiple classifiers for each level 
+    """
+
+    label_predictors = construct_multiple_classifiers(preproc, 
+        predictor_maker, max_level, **modelkwargs)
+    
+    if strategy == 'biased':
+        label_searchers = biased_prior_experiment(label_predictors, train_features, 
+            train_targets, cvkwargs, gridkwargs,
+         n_classes=5)
+        del label_predictors
+    else:
+        label_searchers = None
+
+    transformers = []
+    if label_searchers and hasattr(label_searchers[0], 'refit'):
+        # iterate different label_predictors (pre-trained with different parameters)
+        # this is a path predictor will go if its strategy is biased (including adaboost)
+        for i, param in enumerate(label_searchers[0].cv_results_['params']):
+            scores = numpy.asarray([est.cv_results_['mean_test_score'][i]
+                for est in label_searchers])
+            if 'classifier__priors' in param:
+                param_value = param['classifier__priors']
+            elif 'base_estimator__priors' in param:
+                param_value = param['base_estimator__priors']
+            else:
+                param_value = ' '.join(list(param.values()))
+            if hasattr(param_value, 'shape'):
+                logging.info('label_predictors fit with priors=%s accuracy=%s' %(
+                    numpy.array2string(param_value, suppress_small=True, precision=3),
+                    numpy.array2string(scores, suppress_small=True, precision=3)))
+            else:
+                logging.info('label_predictors (# %d) fit with param=%s scores(%s)=%s' %(
+                        len(label_searchers), param_value, label_searchers[0].scoring,
+                        numpy.array2string(scores, suppress_small=True, precision=3)))
+        label_predictors = [clone(est.estimator).set_params(**param) if not est.refit 
+            else est.best_estimator_ for est in label_searchers]
+
+    transformers.append(FunctionTransformer(
+        labels_to_attributes(preproc, vectorizer), 
+        validate=False, kw_args={'label_predictors': label_predictors}))
+    return transformers, label_searchers
 
 
 classifier_construct = {
@@ -1033,45 +1065,6 @@ def run_single_classifier(csv_file, classifier_type, cvkwargs, gridkwargs, batch
     logging.info('dumping {}'.format(model_name))
 
 
-def multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
-    train_features, train_targets, cvkwargs, gridkwargs, strategy):
-    """
-    construct multiple classifiers for each level 
-    """
-
-    label_searchers = construct_multiple_classifiers(preproc, 
-        predictor_maker, max_level, train_features, train_targets,
-        cvkwargs, gridkwargs, strategy=strategy)
-    
-    transformers = []
-    if hasattr(label_searchers[0], 'refit'):
-        # iterate different label_predictors (pre-trained with different parameters)
-        # this is a path predictor will go if its strategy is biased (including adaboost)
-        for i, param in enumerate(label_searchers[0].cv_results_['params']):
-            scores = numpy.asarray([est.cv_results_['mean_test_score'][i]
-                for est in label_searchers])
-            if 'classifier__priors' in param:
-                param_value = param['classifier__priors']
-            elif 'base_estimator__priors' in param:
-                param_value = param['base_estimator__priors']
-            else:
-                param_value = ' '.join(list(param.values()))
-            if hasattr(param_value, 'shape'):
-                logging.info('label_predictors fit with priors=%s accuracy=%s' %(
-                    numpy.array2string(param_value, suppress_small=True, precision=3),
-                    numpy.array2string(scores, suppress_small=True, precision=3)))
-            else:
-                logging.info('label_predictors (# %d) fit with param=%s scores(%s)=%s' %(
-                        len(label_searchers), param_value, label_searchers[0].scoring,
-                        numpy.array2string(scores, suppress_small=True, precision=3)))
-            label_predictors = [clone(est.estimator).set_params(**param) if not est.refit 
-                else est.best_estimator_ for est in label_searchers]
-            transformers.append(FunctionTransformer(
-                labels_to_attributes(preproc, vectorizer), 
-                validate=False, kw_args={'label_predictors': label_predictors}))
-    return transformers, label_searchers
-
-
 def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level, 
     pretrain_loc, cvkwargs, gridkwargs, batch_mode=False, presort=False, n_rows=-1, 
     n_classes=5, **kwargs):
@@ -1112,6 +1105,7 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
     from sklearn.model_selection import _search
     from unittest.mock import patch 
 
+    strategy_ = kwargs.pop('strategy')
     preproc, (train_features, train_targets), (valid_features, valid_targets), \
         (test_features, test_targets) = preload_helper(
             csv_file, pretrain_loc=pretrain_loc, n_rows=n_rows)
@@ -1122,31 +1116,26 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
 
       # construct the final model
     vectorizer = DictVectorizer(sparse=(classifier_type!='boost'))
-    classifier = Pipeline(
-        [('transformer', None),
-         ('classifier', None)])
+    classifier = Pipeline([('transformer', None), ('classifier', None)])
 
-    # update
-    orig_steps = preproc.steps
-    orig_steps.extend([('normalizer', StandardScaler())]), # adding StandardScaler
-    preproc.set_params(steps = orig_steps)
+    if kwargs.pop('global_scaler_', True):
+        # update to add global StandardScaler in preprocessing step
+        orig_steps = preproc.steps
+        orig_steps.extend([('normalizer', StandardScaler())]),
+        preproc.set_params(steps = orig_steps)
     
     # calling function which will train n-independent label predictors
     if predictor_type in predictor_construct:
         predictor_maker = predictor_construct[predictor_type]
-        strategy_ = 'biased'
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
-            train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_)
+            train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_, **kwargs)
     else:
         clf_name, base_clf = predictor_type.split('_')
         if clf_name =='ada' and max_level != 1:
             max_level = 1
-            strategy_ = 'biased'
-        else:
-            strategy_ = 'calibrated'
         predictor_maker = partial(predictor_construct[clf_name], base_clf)
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level,
-            train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_)
+            train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_, **kwargs)
 
     gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
     
@@ -1184,32 +1173,32 @@ def run_stacking_classifiers(csv_file, classifier_type, predictor_type, max_leve
     classifier_maker = classifier_construct[classifier_type]
     model_name = '%s_%s_%s'%(classifier_type, predictor_type, model_name)
 
-      # construct the final model
+    # construct the final model
     vectorizer = DictVectorizer(sparse=(classifier_type!='boost'))
     classifier = Pipeline(
         [('transformer', None),
          ('classifier', None)])
 
-    # update
-    orig_steps = preproc.steps
-    orig_steps.extend([('normalizer', StandardScaler())]), # adding StandardScaler
-    preproc.set_params(steps = orig_steps)
+    # using global / local standardscaler
+    if kwargs.get('_global_scaler', True):
+        orig_steps = preproc.steps
+        orig_steps.extend([('normalizer', StandardScaler())]), # adding StandardScaler
+        preproc.set_params(steps = orig_steps)
     
     # calling function which will train n-independent label predictors
     if predictor_type in predictor_construct:
         predictor_maker = predictor_construct[predictor_type]
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
-            train_features, train_targets, cvkwargs, gridkwargs)
+            train_features, train_targets, cvkwargs, gridkwargs, modelkwargs)
     else:
         if max_level != 1:
             max_level = 1
         clf_name, base_clf = predictor_type.split('_')
         predictor_maker = partial(predictor_construct[clf_name], base_clf)
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level,
-            train_features, train_targets, cvkwargs, gridkwargs)
+            train_features, train_targets, cvkwargs, gridkwargs, modelkwargs)
 
     # creating label embedding
-
     gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
  
 
@@ -1326,33 +1315,39 @@ def main(*args):
         help="specifying the type of top classifier, options are [tree|ensemble|boost]")
     parser.add_argument("--predictor", default="gnb", choices=['gnb', 'dumb', 'ada_gnb', 'ovr_gnb'],
         help="specifying the type of label predictors, options are [gnb|mnb|dumb]")
-    parser.add_argument("--seed", type=int, default=None, 
+    parser.add_argument("--seed", type=int, nargs=2, default=None, 
         help="specify the seed used for data splitting and modeling")
+    parser.add_argument('--strategy', default='None', help='specifying if biased experiment should be conducted')
     args = parser.parse_args()
+    data_seed = args.seed[0]
+    if len(args.seed) > 1:
+        model_seed = args.seed[1]
+    else:
+        model_seed = None
     if args.subcommand.startswith('w'):
         logging.info("start weighted cross-validation")
         cvkws, gridkws = configure('weight')
-        cvkws.update({'random_state': args.seed}) # for creating consistent split
+        cvkws.update({'random_state': data_seed}) # for creating consistent split
         run_cross_validation(os.path.join(data_dir, args.file),
                 cvkws, gridkws, predefine=args.predefine, n_rows=args.nrows)
     elif args.subcommand.startswith('s'):
         logging.info("start using decision tree to predict sentiment"
                 " file: %s", args.file)
         cvkws, gridkws = configure('single')
-        cvkws.update({'random_state': args.seed}) # for creating consistent split
+        cvkws.update({'random_state': data_seed}) # for creating consistent split
         run_single_classifier(os.path.join(data_dir, args.file), args.classifier,
                 cvkws, gridkws, presort=args.presort, n_rows=args.nrows, 
-                random_state=None) # for creating randomness in model
+                random_state=model_seed) # for creating randomness in model
     elif args.subcommand.startswith('m'):
         logging.info("start using naive bayes + decision tree to predict"
                 " sentiment file: %s", args.file)
         cvkws, gridkws = configure('multi')
-        cvkws.update({'random_state': args.seed}) # for creating consistent split
+        cvkws.update({'random_state': data_seed}) # for creating consistent split
         pretrain_loc = os.path.join(data_dir, args.pretrain)
         run_multi_classifiers(os.path.join(data_dir, args.file), args.classifier, 
                 args.predictor, args.max_levels, pretrain_loc, 
                 cvkws, gridkws, presort=args.presort, n_rows=args.nrows, 
-                random_state=None)  # for creating randomness in model
+                random_state=model_seed, strategy=args.strategy)  # for creating randomness in model
     elif args.subcommand.startswith('p'):
         logging.info("preprocessing and transform words into embedding"
                 ", sentiment file: %s", args.file)
