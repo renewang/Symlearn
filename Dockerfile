@@ -8,3 +8,4 @@ ENTRYPOINT ["/usr/bin/tini", "--"]
 #EXPOSE 8888
 # set the environment variable to avoid restricted 10G space through storage driver
 ENV JOBLIB_TEMP_FOLDER "/usr/src/app/tmp" 
+WORKDIR /usr/src/app/scripts
