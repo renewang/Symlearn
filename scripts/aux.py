@@ -5,8 +5,8 @@ from sklearn.feature_extraction.dict_vectorizer import DictVectorizer
 from sklearn.exceptions import NotFittedError
 from sklearn.metrics import brier_score_loss
 from sklearn.naive_bayes import GaussianNB
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import AdaBoostClassifier
+from sklearn.model_selection import StratifiedShuffleSplit
 
 from copy import deepcopy
 from itertools import groupby
@@ -14,6 +14,7 @@ from symlearn.utils import VocabularyDict
 from operator import itemgetter
 
 from stanfordSentimentTreebank import preprocess_data
+from calibration import CalibratedClassifier, CalibratedClassifierCV
 
 import warnings
 import typing
@@ -305,11 +306,16 @@ class labels_to_attributes(object):
     cython.declare(n_classes=cython.int, using_probs=cython.bint)
 
     def __init__(self, preproc:Pipeline, vectorizer:DictVectorizer, 
-                using_probs:bool=True, n_classes:int=5):
+                using_probs:bool=True, n_classes:int=5, calibrating:bool=False):
         self.preproc = preproc
         self.vectorizer = vectorizer
         self.n_classes = n_classes
         self.using_probs = using_probs
+        if calibrating:
+            self.calibrator = CalibratedClassifier(method='sigmoid', 
+                classes=numpy.arange(n_classes))
+        else:
+            self.calibrator = None
 
     @cython.locals(i=cython.int, level=cython.int, start=cython.int, end=cython.int)
     def __call__(self, raw_data:pandas.DataFrame, y:list=None, 
@@ -331,6 +337,15 @@ class labels_to_attributes(object):
       levels = numpy.hstack(raw_data['levels'])
       phrases = numpy.hstack(raw_data['phrases']) # data type is object
       sentiments = numpy.hstack(raw_data['sentiments'])
+      
+      if self.calibrator and not hasattr(self.calibrator, 'calibrators_'): 
+        # following calibrated strategy and if self.calibrator is not fitted yet,
+        # then spliting estimator_training_set and calibration_training_set
+        cv = StratifiedShuffleSplit(n_splits=1, test_size=0.2)
+        train_est, train_cal = next(cv.split(phrases, sentiments))
+      else:
+        train_est, train_cal  = numpy.arange(len(phrases)), []
+  
 
       if isinstance(label_predictors[0], Pipeline):
         classifier = label_predictors[0].steps[-1][-1]
@@ -342,25 +357,24 @@ class labels_to_attributes(object):
       if isinstance(classifier, CalibratedClassifierCV):
         features_ = 'calibrated_classifiers_'
       elif isinstance(classifier, AdaBoostClassifier):
-        features_ = 'estimators_'
+        features_ = 'estimator_weights_'
       elif isinstance(classifier, GaussianNB):
         features_ = 'theta_'
 
-    
       try:
         check_is_fitted(classifier, features_)
       except AttributeError:
         warnings.warn("refitting on dataset of size %d" %(len(phrases)), UserWarning)
-        group_fit(levels, phrases, sentiments, self.preproc, label_predictors, 
+        group_fit(levels[train_est], phrases[train_est], sentiments[train_est], self.preproc, label_predictors, 
             len(label_predictors))
 
-      uniq_levels = numpy.arange(1, numpy.unique(levels).max() + 1)  # not reduced levels
+      uniq_levels = numpy.arange(1, numpy.unique(levels[train_est]).max() + 1)  # not reduced levels
       
       logging.debug('using prediction probabilities as label attributes %s'
       ' with %d levels (maximal level = %d)'%(
         str(self.using_probs), uniq_levels[-1], len(label_predictors)))
 
-      n_samples = len(levels)
+      n_samples = len(phrases)
       if self.using_probs:
         sentiment_probs = numpy.empty((n_samples, self.n_classes),
             dtype=numpy.float32)
@@ -369,9 +383,10 @@ class labels_to_attributes(object):
         sentiment_probs = numpy.empty((n_samples,), dtype=numpy.float32)
         func_name = 'predict'
 
-      # introduce attention nan to avoid assign probability to root level
+      # introduce intentional nan to avoid assign probability to root level
       sentiment_probs[levels == 0] = numpy.nan 
 
+      # obtain not-calibrated predicting probability
       Xt = self.preproc.transform(phrases)  # phrases to matrix
       for level in uniq_levels:
         if level >= len(label_predictors):
@@ -380,6 +395,12 @@ class labels_to_attributes(object):
             est_id = level - 1
         sentiment_probs[levels == level] = \
             getattr(label_predictors[est_id], func_name)(Xt[levels == level])
+
+      if self.calibrator:
+        if not hasattr(self.calibrator, 'calibrators_'): 
+            # using prefit as in sklearn.calibration.CalibratedClassifierCV
+            self.calibrator = self.calibrator.fit(sentiment_probs[train_cal], sentiments[train_cal])
+        sentiment_probs = self.calibrator.predict_proba(sentiment_probs)
 
       stack_sentprobs = numpy.empty((len(raw_data),), dtype=numpy.object)
       start, end = 0, 0

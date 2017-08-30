@@ -15,19 +15,17 @@ from sklearn.ensemble import (ExtraTreesClassifier, GradientBoostingClassifier,
 from sklearn.calibration import _SigmoidCalibration as SoftMaxScaler
 from sklearn.dummy import DummyClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.multiclass import OneVsRestClassifier
-
+from sklearn.base import BaseEstimator
 from contextlib import contextmanager
 from functools import partial
 from itertools import accumulate
-from collections import OrderedDict
-
+from collections import OrderedDict, deque
 from stanfordSentimentTreebank import create_vocab_variants
 from symlearn.utils import (VocabularyDict, count_vectorizer, construct_score, 
     inspect_and_bind)
 from gensim.models.keyedvectors import KeyedVectors
-
+from calibration import CalibratedClassifierCV
 
 import h5py
 import joblib
@@ -73,6 +71,8 @@ class RestrictedUnpickler(NumpyUnpickler):
         import pickle, sys
         # Only allow safe classes from builtins.
         if not (module in globals() or module in sys.modules):
+            if str(module) == '_aux':
+                module = sys.modules['aux']
             if name in ['count_vectorizer', 'WordNormalizer', 'VocabularyDict',
             'construct_score', 'inspect_and_bind']:
                 logging.warn('skipping importing rquired module %s because not found' % module)
@@ -227,21 +227,18 @@ def construct_decision_tree(**kwargs):
     return estimator
 
 
-def construct_naive_bayes(preprocessor=None, **kwargs):
+def construct_naive_bayes(**kwargs):
     """
     providing default construction for naive bayes
     """
-    if preprocessor is None:
-        # construct a un-trained word processing from scratch
-        preprocessor = construct_preprocessor(**kwargs)
-        estimator = Pipeline([
-            ('preprocessor', preprocessor),
-            ('normalizer', kwargs.get('normalizer', None)),
-            ('classifier', kwargs.get('classifier', None))])
-    else:
-        estimator = Pipeline([
-            ('normalizer', kwargs.get('normalizer', None)),
-            ('classifier', kwargs.get('classifier', None))])
+    steps = deque()
+    for k, v in kwargs.items():
+        if isinstance(v, BaseEstimator):
+            if hasattr(v, 'predict'): # classifier
+                steps.append((k, v))
+            else:
+                steps.appendleft((k, v))
+    estimator = Pipeline(list(steps))
     return estimator
 
 
@@ -290,10 +287,17 @@ def construct_ovr(base_estimator, **kwargs):
         'method': 'sigmoid',                                        # sigmoid or isotonic
         'cv' : StratifiedShuffleSplit(n_splits=1, test_size=0.2),   # reserving additional one as fitting validation  
     }
+
     params.update(kwargs)
     param_ba = inspect_and_bind(CalibratedClassifierCV, **params)
     estimator = Pipeline(steps + 
-        [('classifier', CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs))])
+            [('classifier', CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs))])
+    return estimator
+
+
+def construct_scaler(base_estimator, preproc=None, **kwargs):
+    estimator = predictor_construct[base_estimator](**kwargs)
+    # update preproc
     return estimator
 
 
@@ -331,7 +335,7 @@ def construct_preprocessor(**kwargs):
         **transformer_ba.kwargs)),
     ('decomposer', TruncatedSVD(*decomposer_ba.args, **decomposer_ba.kwargs))])
     return preprocessor
- 
+
 
 def train_test_split(n_samples, **kwargs):
     """
@@ -443,7 +447,10 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
         features['sentiments']))) # taking out root label
 
     # construct train / test split
-    train, valid, test = train_test_split(n_samples, **kwargs)
+    if n_rows != -1:
+        train, valid, test = train_test_split(n_samples, random_state=n_rows, **kwargs)
+    else:
+        train, valid, test = train_test_split(n_samples, **kwargs)
 
     train_features = pandas.DataFrame({
         'ids': features['ids'][train], 
@@ -829,7 +836,7 @@ def cal_learning_curve(clf, train_features, train_targets, **kwargs):
     return(learning_res)
 
 
-def biased_prior_experiment(predictors, train_features, train_targets, cvkwargs, gridkwargs, 
+def biased_prior_experiment(preproc, predictors, train_features, train_targets, cvkwargs, gridkwargs, 
     n_classes=5):
     """
     passing preset priors for experimenting label predictors
@@ -879,7 +886,7 @@ def biased_prior_experiment(predictors, train_features, train_targets, cvkwargs,
     return estimators
 
 
-def construct_multiple_classifiers(preproc, predictor_maker, max_level, **kwargs):
+def construct_multiple_classifiers(predictor_maker, max_level, global_propc=None, **kwargs):
     """
     group phrases into levels and test on their accuracy with sentence only classifier to see 
         1. if there’s need to re-construct vocabulary set and truncated SVD 
@@ -897,22 +904,30 @@ def construct_multiple_classifiers(preproc, predictor_maker, max_level, **kwargs
     @param kwargs: dict
         keyword arguments passing to predictor_maker
     """
-    estimators = [predictor_maker(preprocessor=preproc, **kwargs) for _ in range(max_level)]
+    if global_propc:
+        orig_steps = global_propc.steps
+        orig_steps.extend([('normalizer', StandardScaler())]), # adding StandardScaler
+        global_propc.set_params(steps = orig_steps)
+    estimators = [predictor_maker(**kwargs) for _ in range(max_level)]
     return estimators
 
+
 def multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
-    train_features, train_targets, cvkwargs, gridkwargs, strategy, **modelkwargs):
+    train_features, train_targets, cvkwargs, gridkwargs, strategy, 
+    global_propc=False, **modelkwargs):
     """
     construct multiple classifiers for each level 
     """
-
-    label_predictors = construct_multiple_classifiers(preproc, 
-        predictor_maker, max_level, **modelkwargs)
+    if global_propc:
+        label_predictors = construct_multiple_classifiers(
+            predictor_maker, max_level, global_propc=preproc, **modelkwargs)
+    else:
+         label_predictors = construct_multiple_classifiers(
+            predictor_maker, max_level, global_propc=None, **modelkwargs)
     
     if strategy == 'biased':
-        label_searchers = biased_prior_experiment(label_predictors, train_features, 
-            train_targets, cvkwargs, gridkwargs,
-         n_classes=5)
+        label_searchers = biased_prior_experiment(preproc, label_predictors,
+            train_features, train_targets, cvkwargs, gridkwargs, n_classes=5)
         del label_predictors
     else:
         label_searchers = None
@@ -942,7 +957,7 @@ def multiple_naives(preproc, predictor_maker, vectorizer, max_level,
             else est.best_estimator_ for est in label_searchers]
 
     transformers.append(FunctionTransformer(
-        labels_to_attributes(preproc, vectorizer), 
+        labels_to_attributes(preproc, vectorizer, calibrating=(strategy == 'calibrated')), 
         validate=False, kw_args={'label_predictors': label_predictors}))
     return transformers, label_searchers
 
@@ -954,11 +969,15 @@ classifier_construct = {
 }
 
 predictor_construct = {
-    'gnb': partial(construct_naive_bayes, classifier=clone(GaussianNB())),
-    'mnb': partial(construct_naive_bayes, classifier=clone(MultinomialNB())),
-    'dumb': construct_dumb_classifier,
-    'ada': construct_adaboost,
-    'ovr': construct_ovr,
+    'gnb'  : partial(construct_naive_bayes, classifier=GaussianNB()),
+    'mnb'  : partial(construct_naive_bayes, classifier=MultinomialNB()),
+    'mscale': partial(construct_scaler, normalizer=StandardScaler()),
+    'gscale': construct_scaler,
+    'dumb' : construct_dumb_classifier,
+    'ada'  : construct_adaboost,
+    'ovr'  : construct_ovr,
+    'biased': None,
+    'calibrated': None,
 }
 
 
@@ -1090,22 +1109,21 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
         keyword arguments to pass to construct cross-validation instance
     @param gridkwargs: dict
         keyword arguments to pass to construct GridSearchCV instance (not including cv)
-    @param gridkwargs: dict
-        keyword arguments to pass to construct GridSearchCV instance (not including cv)
     @param batch_mode: bool
         if True, function will return learning result (but not classifer); otherwise, dump the 
         learning result along with classifeirs 
-    @param n_rows: int
-        the number of rows will be read in; when n_rows = -1, will read in all the rows
     @param presort: bool
         if True, will sorting training examples based on their size
+    @param n_rows: int
+        the number of rows will be read in; when n_rows = -1, will read in all the rows
+    @param n_classes: int
+        number of sentiment categories used for classification work (only accepts 2 or 5)
     @param kwargs: dict
         keyword arguments to pass to classifier construction
     """
     from sklearn.model_selection import _search
     from unittest.mock import patch 
 
-    strategy_ = kwargs.pop('strategy')
     preproc, (train_features, train_targets), (valid_features, valid_targets), \
         (test_features, test_targets) = preload_helper(
             csv_file, pretrain_loc=pretrain_loc, n_rows=n_rows)
@@ -1114,17 +1132,12 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
     classifier_maker = classifier_construct[classifier_type]
     model_name = '%s_%s_%s'%(classifier_type, predictor_type, model_name)
 
-      # construct the final model
+    # construct the final model
     vectorizer = DictVectorizer(sparse=(classifier_type!='boost'))
     classifier = Pipeline([('transformer', None), ('classifier', None)])
 
-    if kwargs.pop('global_scaler_', True):
-        # update to add global StandardScaler in preprocessing step
-        orig_steps = preproc.steps
-        orig_steps.extend([('normalizer', StandardScaler())]),
-        preproc.set_params(steps = orig_steps)
-    
     # calling function which will train n-independent label predictors
+    strategy_ = None
     if predictor_type in predictor_construct:
         predictor_maker = predictor_construct[predictor_type]
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
@@ -1133,9 +1146,15 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
         clf_name, base_clf = predictor_type.split('_')
         if clf_name =='ada' and max_level != 1:
             max_level = 1
-        predictor_maker = partial(predictor_construct[clf_name], base_clf)
+   
+        if predictor_construct[clf_name]:
+            predictor_maker = partial(predictor_construct[clf_name], base_clf)
+        else:
+            predictor_maker = predictor_construct[base_clf]
+            strategy_ = clf_name
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level,
-            train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_, **kwargs)
+            train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_, 
+            global_propc=(clf_name=='gscale'), **kwargs)
 
     gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
     
@@ -1179,12 +1198,6 @@ def run_stacking_classifiers(csv_file, classifier_type, predictor_type, max_leve
         [('transformer', None),
          ('classifier', None)])
 
-    # using global / local standardscaler
-    if kwargs.get('_global_scaler', True):
-        orig_steps = preproc.steps
-        orig_steps.extend([('normalizer', StandardScaler())]), # adding StandardScaler
-        preproc.set_params(steps = orig_steps)
-    
     # calling function which will train n-independent label predictors
     if predictor_type in predictor_construct:
         predictor_maker = predictor_construct[predictor_type]
@@ -1297,7 +1310,8 @@ def configure(config_type):
             gridkws.update(site_config[config_type].get('grid', {}))
     return cvkws, gridkws
 
-
+avaiables = ['gnb', 'dumb', 'ada_gnb', 'ovr_gnb', 
+             'gscale_gnb', 'mscale_gnb', 'calibrated_gnb']
 def main(*args):
     parser = argparse.ArgumentParser()
     parser.add_argument("subcommand", 
@@ -1313,11 +1327,10 @@ def main(*args):
         help="loading pretrained word-embeddings")
     parser.add_argument("--classifier", default="tree", 
         help="specifying the type of top classifier, options are [tree|ensemble|boost]")
-    parser.add_argument("--predictor", default="gnb", choices=['gnb', 'dumb', 'ada_gnb', 'ovr_gnb'],
+    parser.add_argument("--predictor", default="gnb", choices=avaiables,
         help="specifying the type of label predictors, options are [gnb|mnb|dumb]")
     parser.add_argument("--seed", type=int, nargs=2, default=None, 
         help="specify the seed used for data splitting and modeling")
-    parser.add_argument('--strategy', default='None', help='specifying if biased experiment should be conducted')
     args = parser.parse_args()
     data_seed = args.seed[0]
     if len(args.seed) > 1:
@@ -1347,7 +1360,7 @@ def main(*args):
         run_multi_classifiers(os.path.join(data_dir, args.file), args.classifier, 
                 args.predictor, args.max_levels, pretrain_loc, 
                 cvkws, gridkws, presort=args.presort, n_rows=args.nrows, 
-                random_state=model_seed, strategy=args.strategy)  # for creating randomness in model
+                random_state=model_seed)  # for creating randomness in model
     elif args.subcommand.startswith('p'):
         logging.info("preprocessing and transform words into embedding"
                 ", sentiment file: %s", args.file)
