@@ -129,8 +129,6 @@ def process_joint_features(data:typing.Tuple, vectorizer:DictVectorizer=None,
     masked_labels = numpy.ma.masked_array(predicted_labels, 
                                           mask=numpy.tile(masked_levels.mask[:, numpy.newaxis], 
                                           (1, n_classes)), copy=False)
-    numpy.testing.assert_array_almost_equal(masked_labels.sum(axis=1), 
-                numpy.ones(len(masked_labels)))
    
     for i, (cur_start, cur_end) in enumerate(zip(sizes[:-1], sizes[1:])):
         for l in range(1, n_levels + 1):
@@ -306,16 +304,14 @@ class labels_to_attributes(object):
     cython.declare(n_classes=cython.int, using_probs=cython.bint)
 
     def __init__(self, preproc:Pipeline, vectorizer:DictVectorizer, 
-                using_probs:bool=True, n_classes:int=5, calibrating:bool=False):
+                using_probs:bool=True, n_classes:int=5, 
+                calibrator_args:dict=None):
         self.preproc = preproc
         self.vectorizer = vectorizer
         self.n_classes = n_classes
         self.using_probs = using_probs
-        if calibrating:
-            self.calibrator = CalibratedClassifier(method='sigmoid', 
-                classes=numpy.arange(n_classes))
-        else:
-            self.calibrator = None
+        self.calibrator_args = calibrator_args
+
 
     @cython.locals(i=cython.int, level=cython.int, start=cython.int, end=cython.int)
     def __call__(self, raw_data:pandas.DataFrame, y:list=None, 
@@ -338,13 +334,16 @@ class labels_to_attributes(object):
       phrases = numpy.hstack(raw_data['phrases']) # data type is object
       sentiments = numpy.hstack(raw_data['sentiments'])
       
-      if self.calibrator and not hasattr(self.calibrator, 'calibrators_'): 
+      train_est, train_cal  = numpy.arange(len(phrases)), []
+      if not hasattr(self, 'fitted') and self.calibrator_args: 
         # following calibrated strategy and if self.calibrator is not fitted yet,
         # then spliting estimator_training_set and calibration_training_set
         cv = StratifiedShuffleSplit(n_splits=1, test_size=0.2)
-        train_est, train_cal = next(cv.split(phrases, sentiments))
-      else:
-        train_est, train_cal  = numpy.arange(len(phrases)), []
+        idx_to_non_root = train_est[levels!=0]
+        _, train_cal = next(cv.split(phrases[levels!=0], levels[levels!=0]))
+        train_cal = idx_to_non_root[train_cal]
+        train_est = numpy.asarray([n for n in set(train_est) - set(train_cal)])
+        assert(numpy.all(levels[train_cal]!=0))
   
 
       if isinstance(label_predictors[0], Pipeline):
@@ -395,19 +394,27 @@ class labels_to_attributes(object):
             est_id = level - 1
         sentiment_probs[levels == level] = \
             getattr(label_predictors[est_id], func_name)(Xt[levels == level])
+        if hasattr(label_predictors[est_id], 'normalized') and label_predictors[est_id].normalized:
+            numpy.testing.assert_array_almost_equal(sentiment_probs[levels == level].sum(axis=1),
+                numpy.ones((levels == level).sum()))
 
-      if self.calibrator:
-        if not hasattr(self.calibrator, 'calibrators_'): 
+      if self.calibrator_args:
+        if not hasattr(self, 'calibrator_'):
             # using prefit as in sklearn.calibration.CalibratedClassifierCV
-            self.calibrator = self.calibrator.fit(sentiment_probs[train_cal], sentiments[train_cal])
-        sentiment_probs = self.calibrator.predict_proba(sentiment_probs)
+            self.calibrator_ = CalibratedClassifier(*self.calibrator_args.args,
+                **self.calibrator_args.kwargs)
+        if not hasattr(self.calibrator_, 'calibrators_'): 
+            self.calibrator_ = self.calibrator_.fit(sentiment_probs[train_cal], sentiments[train_cal])
+        sentiment_probs[levels!=0] = self.calibrator_.predict_proba(sentiment_probs[levels!=0])
+
 
       stack_sentprobs = numpy.empty((len(raw_data),), dtype=numpy.object)
       start, end = 0, 0
       for i, cur_sent in enumerate(raw_data['sentiments']):
         end += len(cur_sent)
-        numpy.testing.assert_array_almost_equal(sentiment_probs[start + 1: end].sum(axis=1), 
-            numpy.ones(end - start - 1))
+        if self.calibrator_ and self.calibrator_.normalized:
+            numpy.testing.assert_array_almost_equal(sentiment_probs[start + 1: end].sum(axis=1), 
+                numpy.ones(end - start - 1))
         assert(not 0 in levels[start + 1 : end])
         stack_sentprobs[i] = sentiment_probs[start:end]
         start = end

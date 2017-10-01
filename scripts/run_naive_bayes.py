@@ -25,7 +25,7 @@ from stanfordSentimentTreebank import create_vocab_variants
 from symlearn.utils import (VocabularyDict, count_vectorizer, construct_score, 
     inspect_and_bind)
 from gensim.models.keyedvectors import KeyedVectors
-from calibration import CalibratedClassifierCV
+from calibration import CalibratedClassifierCV, CalibratedClassifier
 
 import h5py
 import joblib
@@ -293,6 +293,18 @@ def construct_ovr(base_estimator, **kwargs):
     estimator = Pipeline(steps + 
             [('classifier', CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs))])
     return estimator
+
+
+def construct_calibrator(n_classes, **kwargs):
+    params = {
+        'base_estimator': None,                                     # for global CalibratedClassifierC
+        'method': 'sigmoid',                                        # sigmoid or isotonic
+        'classes': numpy.arange(n_classes),                         # 
+        'normalized': False,                                        # return normalized probability
+    }
+    params.update(kwargs)
+    param_ba = inspect_and_bind(CalibratedClassifier, **params)
+    return param_ba
 
 
 def construct_scaler(base_estimator, preproc=None, **kwargs):
@@ -914,10 +926,11 @@ def construct_multiple_classifiers(predictor_maker, max_level, global_propc=None
 
 def multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
     train_features, train_targets, cvkwargs, gridkwargs, strategy, 
-    global_propc=False, **modelkwargs):
+    global_propc=False, n_classes=5, **modelkwargs):
     """
     construct multiple classifiers for each level 
     """
+    normalized = modelkwargs.get('normalized')
     if global_propc:
         label_predictors = construct_multiple_classifiers(
             predictor_maker, max_level, global_propc=preproc, **modelkwargs)
@@ -956,9 +969,12 @@ def multiple_naives(preproc, predictor_maker, vectorizer, max_level,
         label_predictors = [clone(est.estimator).set_params(**param) if not est.refit 
             else est.best_estimator_ for est in label_searchers]
 
+    calibrator = None
+    if strategy == 'calibrated':
+        factory_args = construct_calibrator(n_classes, **modelkwargs)
     transformers.append(FunctionTransformer(
-        labels_to_attributes(preproc, vectorizer, calibrating=(strategy == 'calibrated')), 
-        validate=False, kw_args={'label_predictors': label_predictors}))
+        labels_to_attributes(preproc, vectorizer, calibrator_args=factory_args), validate=False, 
+        kw_args={'label_predictors': label_predictors}))
     return transformers, label_searchers
 
 
@@ -1141,7 +1157,8 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
     if predictor_type in predictor_construct:
         predictor_maker = predictor_construct[predictor_type]
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
-            train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_, **kwargs)
+            train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_, 
+            n_classes=n_classes, **kwargs)
     else:
         clf_name, base_clf = predictor_type.split('_')
         if clf_name =='ada' and max_level != 1:
@@ -1154,7 +1171,7 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
             strategy_ = clf_name
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level,
             train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_, 
-            global_propc=(clf_name=='gscale'), **kwargs)
+            global_propc=(clf_name=='gscale'), n_classes=n_classes, **kwargs)
 
     gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
     
@@ -1202,14 +1219,14 @@ def run_stacking_classifiers(csv_file, classifier_type, predictor_type, max_leve
     if predictor_type in predictor_construct:
         predictor_maker = predictor_construct[predictor_type]
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
-            train_features, train_targets, cvkwargs, gridkwargs, modelkwargs)
+            train_features, train_targets, cvkwargs, gridkwargs, **kwargs)
     else:
         if max_level != 1:
             max_level = 1
         clf_name, base_clf = predictor_type.split('_')
         predictor_maker = partial(predictor_construct[clf_name], base_clf)
         transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level,
-            train_features, train_targets, cvkwargs, gridkwargs, modelkwargs)
+            train_features, train_targets, cvkwargs, gridkwargs, **kwargs)
 
     # creating label embedding
     gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
@@ -1291,16 +1308,19 @@ def configure(config_type):
     """
     default_config = {
     'single': [{'n_splits': 10, 'random_state': None}, # used to create the same partition
-               {'scoring': 'accuracy', 'verbose': 0}
+               {'scoring': 'accuracy', 'verbose': 0},
+               {}, # passing label_predictors configurations
                ],
     'multi':  [{'n_splits': 10, 'random_state': None}, # used to create the same partition
-               {'scoring': 'accuracy', 'verbose': 0, 'n_jobs': 2, 'refit': True}
+               {'scoring': 'accuracy', 'verbose': 0, 'n_jobs': 2, 'refit': True},
+               {}, # passing label_predictors configurations
                ],
     'weight': [{'n_splits': 10, 'shuffle': True, 'random_state': None},
-               {'verbose': 10, 'refit': True}
+               {'verbose': 10, 'refit': True},
+               {}, # passing label_predictors configurations
                ]
     }
-    cvkws, gridkws = default_config[config_type]
+    cvkws, gridkws, modelkws = default_config[config_type]
     config_file = 'exec.json'
     if os.path.exists(config_file):
         with open(config_file, 'rt') as fp:
@@ -1308,10 +1328,14 @@ def configure(config_type):
         if config_type in site_config:
             cvkws.update(site_config[config_type].get('cv', {}))
             gridkws.update(site_config[config_type].get('grid', {}))
-    return cvkws, gridkws
+            modelkws.update(site_config[config_type].get('model', {}))
+    return cvkws, gridkws, modelkws
+
 
 avaiables = ['gnb', 'dumb', 'ada_gnb', 'ovr_gnb', 
              'gscale_gnb', 'mscale_gnb', 'calibrated_gnb']
+
+
 def main(*args):
     parser = argparse.ArgumentParser()
     parser.add_argument("subcommand", 
@@ -1323,12 +1347,13 @@ def main(*args):
     parser.add_argument("-c", "--ncomponents", type=int, default=300, help="maximal number of components used")
     parser.add_argument("-t", "--max_levels", type=int, default=16, help="threadshold for maximal level used")
     parser.add_argument("--presort", action="store_true", help="presorting training examples")
+    parser.add_argument("--normalized", action="store_true", help="normalize predicting probability by simply dividing sum")
     parser.add_argument("--pretrain", default='treebased_phrases_vocab.model', 
         help="loading pretrained word-embeddings")
     parser.add_argument("--classifier", default="tree", 
         help="specifying the type of top classifier, options are [tree|ensemble|boost]")
     parser.add_argument("--predictor", default="gnb", choices=avaiables,
-        help="specifying the type of label predictors, options are [gnb|mnb|dumb]")
+        help="specifying the type of label predictors, options are [%s]" % ('|'.join(avaiables)))
     parser.add_argument("--seed", type=int, nargs=2, default=None, 
         help="specify the seed used for data splitting and modeling")
     args = parser.parse_args()
@@ -1339,28 +1364,28 @@ def main(*args):
         model_seed = None
     if args.subcommand.startswith('w'):
         logging.info("start weighted cross-validation")
-        cvkws, gridkws = configure('weight')
+        cvkws, gridkws, modelkws = configure('weight')
         cvkws.update({'random_state': data_seed}) # for creating consistent split
         run_cross_validation(os.path.join(data_dir, args.file),
-                cvkws, gridkws, predefine=args.predefine, n_rows=args.nrows)
+                cvkws, gridkws, predefine=args.predefine, n_rows=args.nrows, **modelkws)
     elif args.subcommand.startswith('s'):
         logging.info("start using decision tree to predict sentiment"
                 " file: %s", args.file)
-        cvkws, gridkws = configure('single')
+        cvkws, gridkws, modelkws = configure('single')
         cvkws.update({'random_state': data_seed}) # for creating consistent split
         run_single_classifier(os.path.join(data_dir, args.file), args.classifier,
                 cvkws, gridkws, presort=args.presort, n_rows=args.nrows, 
-                random_state=model_seed) # for creating randomness in model
+                random_state=model_seed, **modelkws) # for creating randomness in model
     elif args.subcommand.startswith('m'):
         logging.info("start using naive bayes + decision tree to predict"
                 " sentiment file: %s", args.file)
-        cvkws, gridkws = configure('multi')
+        cvkws, gridkws, modelkws = configure('multi')
         cvkws.update({'random_state': data_seed}) # for creating consistent split
         pretrain_loc = os.path.join(data_dir, args.pretrain)
         run_multi_classifiers(os.path.join(data_dir, args.file), args.classifier, 
                 args.predictor, args.max_levels, pretrain_loc, 
                 cvkws, gridkws, presort=args.presort, n_rows=args.nrows, 
-                random_state=model_seed)  # for creating randomness in model
+                random_state=model_seed, **modelkws)  # for creating randomness in model
     elif args.subcommand.startswith('p'):
         logging.info("preprocessing and transform words into embedding"
                 ", sentiment file: %s", args.file)
