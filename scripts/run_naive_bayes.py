@@ -972,6 +972,8 @@ def multiple_naives(preproc, predictor_maker, vectorizer, max_level,
     calibrator = None
     if strategy == 'calibrated':
         factory_args = construct_calibrator(n_classes, **modelkwargs)
+    else:
+        factory_args = None
     transformers.append(FunctionTransformer(
         labels_to_attributes(preproc, vectorizer, calibrator_args=factory_args), validate=False, 
         kw_args={'label_predictors': label_predictors}))
@@ -995,6 +997,52 @@ predictor_construct = {
     'biased': None,
     'calibrated': None,
 }
+
+
+def recursive_construct(predictor_type):
+    """
+    recursive construct classifier based on the passing predictor_type pattern (split by underscore, _)
+    
+    Parameters
+    ----------
+    @param predictor_type: string
+        string might have ([a-zA-Z]+_)*[a-zA-Z]+
+
+    >>> res = recursive_construct("gnb")
+    >>> print(res[0].func.__name__, res[1], res[2])
+    construct_naive_bayes None None
+    >>> res = recursive_construct("ada_gnb")
+    >>> print(res[0].func.__name__, res[1], res[2])
+    construct_adaboost ada None
+    >>> res = recursive_construct("gscale")
+    >>> print(res[0].__name__, res[1], res[2])
+    construct_scaler None None
+    >>> res = recursive_construct("ovr_gnb")
+    >>> print(res[0].func.__name__, res[1], res[2])
+    construct_ovr ovr None
+    >>> res = recursive_construct("calibrated_gnb")
+    >>> print(res[0].func.__name__, res[1], res[2])
+    construct_naive_bayes calibrated calibrated
+    >>> res = recursive_construct("calibrated_ada_gnb")
+    >>> print(res[0].func.__name__, res[1], res[2])
+    construct_adaboost ada calibrated
+    """
+    strategy_ = None
+    if predictor_type in predictor_construct:
+        predictor_maker = predictor_construct[predictor_type]
+        clf_name =  None
+    else:
+        clf_name, base_clf = predictor_type.split('_', maxsplit=1)
+        if base_clf.find('_') > 0:
+            strategy_ = clf_name
+            predictor_maker, clf_name, _ = recursive_construct(base_clf)
+        else:
+            if predictor_construct[clf_name]:
+                predictor_maker = partial(predictor_construct[clf_name], base_clf)
+            else:
+                strategy_ = clf_name
+                predictor_maker = predictor_construct[base_clf]
+    return predictor_maker, clf_name, strategy_
 
 
 def run_single_classifier(csv_file, classifier_type, cvkwargs, gridkwargs, batch_mode=False,
@@ -1153,23 +1201,10 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
     classifier = Pipeline([('transformer', None), ('classifier', None)])
 
     # calling function which will train n-independent label predictors
-    strategy_ = None
-    if predictor_type in predictor_construct:
-        predictor_maker = predictor_construct[predictor_type]
-        transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level, 
-            train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_, 
-            n_classes=n_classes, **kwargs)
-    else:
-        clf_name, base_clf = predictor_type.split('_')
-        if clf_name =='ada' and max_level != 1:
-            max_level = 1
-   
-        if predictor_construct[clf_name]:
-            predictor_maker = partial(predictor_construct[clf_name], base_clf)
-        else:
-            predictor_maker = predictor_construct[base_clf]
-            strategy_ = clf_name
-        transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level,
+    predictor_maker, clf_name, strategy_ = recursive_construct(predictor_type)
+    if clf_name =='ada' and max_level != 1:
+        max_level = 1
+    transformers, label_searchers = multiple_naives(preproc, predictor_maker, vectorizer, max_level,
             train_features, train_targets, cvkwargs, gridkwargs, strategy=strategy_, 
             global_propc=(clf_name=='gscale'), n_classes=n_classes, **kwargs)
 
@@ -1333,7 +1368,8 @@ def configure(config_type):
 
 
 avaiables = ['gnb', 'dumb', 'ada_gnb', 'ovr_gnb', 
-             'gscale_gnb', 'mscale_gnb', 'calibrated_gnb']
+             'gscale_gnb', 'mscale_gnb', 'calibrated_gnb',
+             'calibrated_ada_gnb']
 
 
 def main(*args):

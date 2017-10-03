@@ -412,7 +412,7 @@ class labels_to_attributes(object):
       start, end = 0, 0
       for i, cur_sent in enumerate(raw_data['sentiments']):
         end += len(cur_sent)
-        if self.calibrator_ and self.calibrator_.normalized:
+        if hasattr(self, 'calibrator_') and self.calibrator_.normalized:
             numpy.testing.assert_array_almost_equal(sentiment_probs[start + 1: end].sum(axis=1), 
                 numpy.ones(end - start - 1))
         assert(not 0 in levels[start + 1 : end])
