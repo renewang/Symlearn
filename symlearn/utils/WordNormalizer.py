@@ -6,12 +6,15 @@ from nltk.stem.porter import PorterStemmer
 
 from functools import partial
 
-from symlearn.utils import VocabularyDict
+from symlearn.utils import VocabularyDict 
 
 import numpy
+import spacy
 import re
 import scipy
 import cython
+import warnings
+
 
 NUM_PAT = re.compile(r"([()+\-.,]?\d+)+")
 PUNKT_PAT = re.compile(r"^([^\w]+)$")
@@ -156,3 +159,70 @@ class count_vectorizer(object):
         return scipy.sparse.coo_matrix((numpy.hstack(data),
             (numpy.hstack(rows), numpy.hstack(cols))), shape=(len(X),
                 len(self.vocab)), dtype=self.dtype).tocsr() 
+
+
+class spacy_vectorizer(object):
+    """
+    a proxy class of spacy.Language model instance acting like a scikit-learn 
+    Pipeline object handling several consecutive transformations and return a
+    average word embedding vector for each sentence
+    """
+
+    def __init__(self, model_file, max_features=numpy.Inf, dtype=numpy.float32):
+        """
+        load the spacy model from the specified model_file
+
+        Parameters
+        ----------
+        @param model_file: string 
+            the model name or path for spacy to load
+        @param max_features: int
+            to scale the dimensionality of vector 
+        @param dtype: numpy.dtype object
+            to specify the data type for the word embedding
+        """
+        self.model = spacy.load(model_file)
+        self.dtype = dtype
+
+        if max_features < self.model.vocab.vectors_length:
+            self.model.vocab.resize_vectors(max_features)
+
+        self.max_features = self.model.vocab.vectors_length
+            
+    def preprocess(self, rawdocs:list):
+        """
+        process text and return doc object for storing
+
+        Parameters
+        ----------
+        """
+        for i, text in enumerate(rawdocs):
+            if isinstance(text, list):
+                text = ' '.join(text)
+            text = text.replace('\\', '') # dealing with backslash
+            yield self.model.make_doc(text)
+
+    def __call__(self, X:list, y=None)->numpy.array:
+        """
+        convert a list of text into vectors 
+
+        Parameters
+        ----------
+        @param X: list of text
+            the collection of phrases in natural language for processing
+        @param y: list of int
+            the target labels to be passed along if needed; usually has no effect
+        """
+        # allocate array for the embeddings
+        Xt = numpy.zeros((len(X), self.max_features), dtype=self.dtype)
+        if isinstance(X[0], (str, list)):
+            iter_ = self.preprocess(X)
+        else:
+            iter_ = enumerate(X)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", category=RuntimeWarning)
+            for i, doc in iter_:   
+                if doc.vector_norm != 0: # not in the vocabulary, will be all zeros 
+                    Xt[i] = doc.vector / doc.vector_norm
+        return Xt

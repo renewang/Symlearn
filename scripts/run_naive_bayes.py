@@ -24,6 +24,7 @@ from collections import OrderedDict, deque
 from stanfordSentimentTreebank import create_vocab_variants
 from symlearn.utils import (VocabularyDict, count_vectorizer, construct_score, 
     inspect_and_bind)
+from symlearn.utils.WordNormalizer import spacy_vectorizer
 from gensim.models.keyedvectors import KeyedVectors
 from calibration import CalibratedClassifierCV, CalibratedClassifier
 
@@ -33,6 +34,7 @@ import pandas
 import numpy
 import scipy
 import cython
+import spacy
 
 import json
 import pathlib
@@ -60,7 +62,7 @@ logging.basicConfig(format=FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p',
 
 data_dir = os.path.join(os.getenv('DATADIR', default='..'), 'data')
 
-from joblib.numpy_pickle import NumpyUnpickler
+from joblib.numpy_pickle import NumpyUnpickler, NumpyPickler
 
 class RestrictedUnpickler(NumpyUnpickler):
     """
@@ -81,7 +83,65 @@ class RestrictedUnpickler(NumpyUnpickler):
                 raise pickle.UnpicklingError("global '%s.%s' is forbidden" %
                     (module, name))
         return super(RestrictedUnpickler, self).find_class(module, name)
+
+    def persistent_load(self, persistency):
+        """
+        pid should be the model name
+        """
+        cls, pid = persistency
+        try:
+            model = spacy.load(pid)
+        except:
+            raise pickle.UnpicklingError("cannot unpickle from persistent id")
+        if cls == spacy.vocab.Vocab:
+            return model.vocab
+        else:
+            return model
  
+
+class LanguageModelPickler(NumpyPickler):
+
+    model_name = 'en_vectors_glove_md' # hard-coded for now
+
+    def persistent_id(self, obj):
+        if isinstance(obj, spacy.en.English):
+            return (obj.__class__, str(obj.path))
+        elif isinstance(obj, spacy.vocab.Vocab) :
+            return (obj.__class__, self.model_name)
+        else:
+            return None    
+
+    def save(self, obj, save_persistent_id=False):
+        return super(LanguageModelPickler, self).save(obj)
+
+
+def pickle_spaCy(spaCy_inst):
+    # need to manually add those attributes rerquired when the instance is constructed
+    if isinstance(spaCy_inst, spacy.tokens.span.Span):
+        return spaCy_inst.__class__, \
+            (spaCy_inst.doc, spaCy_inst.start, 
+             spaCy_inst.end, spaCy_inst.label, 
+             spaCy_inst.vector, spaCy_inst.vector_norm)
+    elif isinstance(spaCy_inst, spacy.tokens.doc.Doc):
+        return spaCy_inst.__class__, \
+            (spaCy_inst.vocab, spaCy_inst.to_bytes())
+
+
+def unpickle_spaCy(cls, *args):
+    if cls == spacy.tokens.span.Span:
+        return cls(*args)
+    elif cls == spacy.tokens.doc.Doc:
+        # the first argument should be vocab
+        assert(isinstance(args[0], spacy.vocab.Vocab))
+        assert(isinstance(args[1], bytes))
+        return cls(args[0]).from_bytes(args[1])
+
+
+# must be declared in the global scope
+import copyreg
+copyreg.pickle(spacy.tokens.span.Span, pickle_spaCy, unpickle_spaCy)
+copyreg.pickle(spacy.tokens.doc.Doc, pickle_spaCy, unpickle_spaCy)
+
 
 class DummyProxy(DummyClassifier):
     """
@@ -349,6 +409,25 @@ def construct_preprocessor(**kwargs):
     return preprocessor
 
 
+def load_from(load_module, load_model):
+    """
+    Parameters
+    ----------
+    @param load_module:  string
+        used to specify which module should be used to load the pre-trained model
+        currently allowed: gensim and spacy
+    @param load_model: string
+        used to specify which model should be loaded from the module: commonly used
+        are word2vec and glove
+    """
+    preproc = None
+    if load_module == 'spacy':
+        preproc = Pipeline(steps=[
+            ('transformer', FunctionTransformer(
+                spacy_vectorizer(load_model), validate=False))])
+    return None, preproc
+
+
 def train_test_split(n_samples, **kwargs):
     """
     function to make train or test split by random or by the predefine split
@@ -426,13 +505,13 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
     @param kwargs: extra keywords passing to train_test_split only works if 
         n_rows != -1 (parailly read in)
     """
-    if pretrain_loc and os.path.exists(pretrain_loc):
-        pretrain_loc = pathlib.Path(pretrain_loc)
+    if pretrain_loc and os.path.exists(os.path.join(data_dir, pretrain_loc)):
+        pretrain_loc = pathlib.Path(os.path.join(data_dir, pretrain_loc))
         if pretrain_loc.suffix.endswith('model'):
             # trained by unigram + truncatedSVD
             from unittest.mock import patch
-            with patch.object(joblib.numpy_pickle, 'NumpyUnpickler', 
-                new=RestrictedUnpickler, spec_set=True):
+            with patch.multiple(joblib.numpy_pickle, NumpyPickler=LanguageModelPickler, 
+                NumpyUnpickler=RestrictedUnpickler, spec_set=True):
                 preproc = joblib.load(pretrain_loc.as_posix())
             vocab = preproc.named_steps['vectorizer'].func.vocab
         else:
@@ -447,11 +526,14 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
         # training word embedding on the fly
         vocab = VocabularyDict(os.path.join(data_dir, 'treebased_phrases_vocab'))
         preproc = construct_preprocessor(vocabulary=vocab)
+    elif pretrain_loc.startswith('en'):
+        # loading model from Spacy
+        vocab, preproc = load_from('spacy', pretrain_loc)
     else:
         # don't need pretrain word embedding for example, using single classifier 
         vocab, preproc = None, None
 
-    features = transform_features(csv_file, n_rows=n_rows, preproc=preproc,
+    features = transform_features(os.path.join(data_dir, csv_file), n_rows=n_rows, preproc=preproc,
                 vocab=vocab)
 
     n_samples = len(features['wordtokens'])
@@ -480,10 +562,15 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
         'phrases': features['phrases'][test], 
         'sentiments': features['sentiments'][test]})
 
-    if preproc:
-        logging.info("preprocessor is loaded from %s using n_components=%d n_words=%d" %
-            (pretrain_loc, preproc.named_steps['decomposer'].n_components, 
-                len(preproc.named_steps['vectorizer'].func.vocab)))
+    if preproc and isinstance(preproc, Pipeline):
+        if len(preproc.steps) == 1:
+            logging.info("preprocessor is loaded from %s using n_components=%d n_words=%d" %
+                (pretrain_loc, preproc.named_steps['transformer'].func.max_features, 
+                    len(preproc.named_steps['transformer'].func.model.vocab)))
+        else:
+            logging.info("preprocessor is loaded from %s using n_components=%d n_words=%d" %
+                (pretrain_loc, preproc.named_steps['decomposer'].n_components, 
+                    len(preproc.named_steps['vectorizer'].func.vocab)))
 
     return preproc, (train_features, targets[train]), \
         (valid_features, targets[valid]), (test_features, targets[test])
@@ -667,7 +754,7 @@ def parallel_fit(estimator, X, y=None, prealloc=None,  parameters={},
        used to set estimator parameters
     @param fit_params: dict
        used to pass additional parameters into estimator's fit method
-    """
+   """
     assert(parameters)
     estimator.set_params(**parameters)
     estimator.fit(X, **fit_params)
@@ -1223,9 +1310,13 @@ def run_multi_classifiers(csv_file, classifier_type, predictor_type, max_level,
     if batch_mode:
         return (final_result, test_score)
 
-    joblib.dump((searcher, vectorizer, preproc, label_searchers, \
-        (train_features, train_targets), (valid_features, valid_targets), \
-        (test_features, test_targets)), os.path.join(data_dir, model_name))
+    #import dill
+    #with patch.multiple(joblib.numpy_pickle, pickle=dill, 
+    with patch.multiple(joblib.numpy_pickle, 
+        NumpyPickler=LanguageModelPickler, spec_set=True):
+        joblib.dump((searcher, vectorizer, preproc, label_searchers, \
+            (train_features, train_targets), (valid_features, valid_targets), \
+            (test_features, test_targets)), os.path.join(data_dir, model_name))
     logging.info('completing fitting and dumping {}'.format(model_name))
 
 
@@ -1417,9 +1508,8 @@ def main(*args):
                 " sentiment file: %s", args.file)
         cvkws, gridkws, modelkws = configure('multi')
         cvkws.update({'random_state': data_seed}) # for creating consistent split
-        pretrain_loc = os.path.join(data_dir, args.pretrain)
-        run_multi_classifiers(os.path.join(data_dir, args.file), args.classifier, 
-                args.predictor, args.max_levels, pretrain_loc, 
+        run_multi_classifiers(args.file, args.classifier, 
+                args.predictor, args.max_levels, args.pretrain, 
                 cvkws, gridkws, presort=args.presort, n_rows=args.nrows, 
                 random_state=model_seed, **modelkws)  # for creating randomness in model
     elif args.subcommand.startswith('p'):

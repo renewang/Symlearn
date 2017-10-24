@@ -246,12 +246,19 @@ def transform_features(csv_file:str, n_rows:int=-1, preproc:Pipeline=None,
 
         assert(len(phrases)==len(ids))  # check both lengths are the same
         assert(all(list(map(lambda x: len(x) > 0, phrases))))
-        del sentences
-        gc.collect()
 
-        for i, uid in enumerate(uniq_ids):
-            features['wordtokens'][i] = wordtokens[i]
-            features['phrases'][i] = phrases[ids == uid]
+    elif preproc:
+        # keep the doc object
+        wordtokens = list(preproc.steps[0][-1].func.preprocess(sentences.tolist())) 
+        phrases = numpy.asarray([wordtokens[i][start_pos:end_pos] for i, tree_id in
+                enumerate(ids[levels==0])
+                for start_pos, end_pos in phrases_pos[tree_id]])
+    del sentences
+    gc.collect()
+    for i, uid in enumerate(uniq_ids):
+        features['wordtokens'][i] = wordtokens[i]
+        features['phrases'][i] = phrases[ids == uid]
+
     return features
 
 
