@@ -23,7 +23,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.1',
 
-    description='A simple Toy Deep Learning Package',
+    description='A Simple Toy Deep Learning Package',
 
     # The project's main homepage.
     url='https://github.com/renewang/Symlearn',
@@ -62,7 +62,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(include=('utils',)),
+    packages=find_packages(include=('utils', 'csgraph')),
 
     # scripts 
     scripts=[],
@@ -105,4 +105,9 @@ setup(
 
     # extension modules
     # ext_modules = cythonize("_aux.pyx"), 
+
+    # Specify the test suite to run when test sub-command is invoked. Noticing
+    # that the test suite must be wrapped with unittest.TestCase class or
+    # method
+    # test_suite=
 )

@@ -280,3 +280,15 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
                         tile_col * (W + Ws): tile_col * (W + Ws) + W
                     ] = this_img * c
         return out_array
+
+
+def compute_len_stats(len_dist):
+    """
+    return lengths distribution of sentence plus cumulative sum
+    @param len_dist is a list whose elements are corresponding sentence length
+    """
+    # TODO: consider to replace with numpy.bincount
+    len_count = numpy.zeros(len(numpy.unique(len_dist)) + 1, dtype=numpy.int)
+    for i, cur_len in enumerate(numpy.unique(len_dist)):
+        len_count[i + 1] = numpy.sum(len_dist == cur_len)
+    return(numpy.unique(len_dist), len_count)
