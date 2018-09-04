@@ -14,7 +14,7 @@ try:
     import pyximport
     pyximport.install(reload_support=True, build_in_temp=False, inplace=True,
             language_level=3)
-    from recursnn.cnltk import (fromstring, Node, encode_path, read_bin_trees, 
+    from .cnltk import (fromstring, Node, encode_path, read_bin_trees, 
                                 read_bin_file)
     logger.info('using cython module')
 except ImportError:

@@ -1,5 +1,5 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.model_selection import (StratifiedKFold, GroupKFold, ShuffleSplit,
+from sklearn.model_selection import (StratifiedKFold, GroupShuffleSplit, ShuffleSplit,
         GridSearchCV, learning_curve, ParameterGrid, PredefinedSplit, StratifiedShuffleSplit)
 from sklearn.decomposition import TruncatedSVD
 from sklearn.naive_bayes import GaussianNB, MultinomialNB
@@ -19,14 +19,16 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.base import BaseEstimator
 from contextlib import contextmanager
 from functools import partial
-from itertools import accumulate
+from itertools import accumulate, chain
 from collections import OrderedDict, deque
-from stanfordSentimentTreebank import create_vocab_variants
+from stanfordSentimentTreebank import create_vocab_variants, compute_weights
 from symlearn.utils import (VocabularyDict, count_vectorizer, construct_score, 
     inspect_and_bind)
 from symlearn.utils.WordNormalizer import spacy_vectorizer
-from gensim.models.keyedvectors import KeyedVectors
 from calibration import CalibratedClassifierCV, CalibratedClassifier
+#from boost import WeightAdaBoostClassifier
+import gensim.models.keyedvectors as kv
+from exec_helper import patch_pickled_preproc
 
 import h5py
 import joblib
@@ -45,14 +47,21 @@ import argparse
 import time
 import os
 import gc
+import mmap
 
 
 if cython.compiled:
     from _aux import (transform_features, group_fit, labels_to_attributes, 
-        process_joint_features)       
+        process_joint_features, phrase_only_transformation)       
 else:
     from aux import (transform_features, group_fit, labels_to_attributes,
-        process_joint_features)
+        process_joint_features, phrase_only_transformation)
+
+major,_ ,_ = list(map(int, spacy.__version__.split('.')))
+if major > 1:
+    from spacy.lang.en import English
+else:
+    from spacy.en import English
 
 
 FORMAT='%(asctime)s:%(levelname)s:%(threadName)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s'
@@ -61,42 +70,6 @@ logging.basicConfig(format=FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logging.INFO, handlers=[logging.StreamHandler()])
 
 data_dir = os.path.join(os.getenv('DATADIR', default='..'), 'data')
-
-from joblib.numpy_pickle import NumpyUnpickler, NumpyPickler
-
-class RestrictedUnpickler(NumpyUnpickler):
-    """
-    overwrite find_class to restrict global modules import
-    """
-
-    def find_class(self, module, name):
-        import pickle, sys
-        # Only allow safe classes from builtins.
-        if not (module in globals() or module in sys.modules):
-            if str(module) == '_aux':
-                module = sys.modules['aux']
-            if name in ['count_vectorizer', 'WordNormalizer', 'VocabularyDict',
-            'construct_score', 'inspect_and_bind']:
-                logging.warn('skipping importing rquired module %s because not found' % module)
-                module = 'symlearn.utils'
-            else:
-                raise pickle.UnpicklingError("global '%s.%s' is forbidden" %
-                    (module, name))
-        return super(RestrictedUnpickler, self).find_class(module, name)
-
-    def persistent_load(self, persistency):
-        """
-        pid should be the model name
-        """
-        cls, pid = persistency
-        try:
-            model = spacy.load(pid)
-        except:
-            raise pickle.UnpicklingError("cannot unpickle from persistent id")
-        if cls == spacy.vocab.Vocab:
-            return model.vocab
-        else:
-            return model
  
 
 class LanguageModelPickler(NumpyPickler):
@@ -104,7 +77,7 @@ class LanguageModelPickler(NumpyPickler):
     model_name = 'en_vectors_glove_md' # hard-coded for now
 
     def persistent_id(self, obj):
-        if isinstance(obj, spacy.en.English):
+        if isinstance(obj, English):
             return (obj.__class__, str(obj.path))
         elif isinstance(obj, spacy.vocab.Vocab) :
             return (obj.__class__, self.model_name)
@@ -138,9 +111,9 @@ def unpickle_spaCy(cls, *args):
 
 
 # must be declared in the global scope
-import copyreg
-copyreg.pickle(spacy.tokens.span.Span, pickle_spaCy, unpickle_spaCy)
-copyreg.pickle(spacy.tokens.doc.Doc, pickle_spaCy, unpickle_spaCy)
+#import copyreg
+#copyreg.pickle(spacy.tokens.span.Span, pickle_spaCy, unpickle_spaCy)
+#copyreg.pickle(spacy.tokens.doc.Doc, pickle_spaCy, unpickle_spaCy)
 
 
 class DummyProxy(DummyClassifier):
@@ -298,7 +271,11 @@ def construct_naive_bayes(**kwargs):
                 steps.append((k, v))
             else:
                 steps.appendleft((k, v))
-    estimator = Pipeline(list(steps))
+    if len(steps) > 1:
+        estimator = Pipeline(list(steps))
+    else:
+        assert('classifier' in kwargs)
+        estimator = kwargs['classifier']
     return estimator
 
 
@@ -323,8 +300,13 @@ def construct_adaboost(base_estimator, **kwargs):
         # only need classifier
         params['base_estimator'] = params['base_estimator'].steps[-1][-1]
     params.update(kwargs)
-    param_ba = inspect_and_bind(AdaBoostClassifier, **params)
-    estimator = AdaBoostClassifier(*param_ba.args, **param_ba.kwargs)
+    if 'weight_init' in kwargs:
+        #param_ba = inspect_and_bind(WeightAdaBoostClassifier, **params)
+        #estimator = WeightAdaBoostClassifier(*param_ba.args, **param_ba.kwargs)
+        pass
+    else:
+        param_ba = inspect_and_bind(AdaBoostClassifier, **params)
+        estimator = AdaBoostClassifier(*param_ba.args, **param_ba.kwargs)
     return estimator
 
 
@@ -350,8 +332,11 @@ def construct_ovr(base_estimator, **kwargs):
 
     params.update(kwargs)
     param_ba = inspect_and_bind(CalibratedClassifierCV, **params)
-    estimator = Pipeline(steps + 
-            [('classifier', CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs))])
+    if steps:
+        estimator = Pipeline(steps + 
+                [('classifier', CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs))])
+    else:
+        estimator = CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs)
     return estimator
 
 
@@ -371,42 +356,6 @@ def construct_scaler(base_estimator, preproc=None, **kwargs):
     estimator = predictor_construct[base_estimator](**kwargs)
     # update preproc
     return estimator
-
-
-def construct_preprocessor(**kwargs):
-    """
-    providing default construction of preprocessor
-    """
-    new_kwargs = {
-        'strip_accents': 'unicode',
-        'tokenizer': simple_split,
-        'analyzer': 'word',
-        # work-around for segfault,
-        # https://github.com/scikit-learn/scikit-learn/issues/7626
-        'algorithm': 'arpack',
-        'sublinear_tf': True,
-        'use_idf': True}
-    new_kwargs.update(kwargs)
-
-    vocab = kwargs.get('vocabulary', None)
-    if not vocab: # compute from training set
-        vectorizer_ba = inspect_and_bind(CountVectorizer, **new_kwargs)
-        extractor = CountVectorizer(*vectorizer_ba.args, **vectorizer_ba.kwargs)
-    else:
-        new_kwargs.update({'vocab_file': vocab})
-        extractor_ba = inspect_and_bind(count_vectorizer, **new_kwargs)
-        extractor = FunctionTransformer(count_vectorizer(*extractor_ba.args,
-            **extractor_ba.kwargs), validate=False)
-        
-    transformer_ba = inspect_and_bind(TfidfTransformer, **new_kwargs)
-    decomposer_ba = inspect_and_bind(TruncatedSVD, **new_kwargs)
-
-    preprocessor = Pipeline([
-    ('vectorizer', extractor),
-    ('transformer', TfidfTransformer(*transformer_ba.args,
-        **transformer_ba.kwargs)),
-    ('decomposer', TruncatedSVD(*decomposer_ba.args, **decomposer_ba.kwargs))])
-    return preprocessor
 
 
 def load_from(load_module, load_model):
@@ -505,34 +454,13 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
     @param kwargs: extra keywords passing to train_test_split only works if 
         n_rows != -1 (parailly read in)
     """
-    if pretrain_loc and os.path.exists(os.path.join(data_dir, pretrain_loc)):
-        pretrain_loc = pathlib.Path(os.path.join(data_dir, pretrain_loc))
-        if pretrain_loc.suffix.endswith('model'):
-            # trained by unigram + truncatedSVD
-            from unittest.mock import patch
-            with patch.multiple(joblib.numpy_pickle, NumpyPickler=LanguageModelPickler, 
-                NumpyUnpickler=RestrictedUnpickler, spec_set=True):
-                preproc = joblib.load(pretrain_loc.as_posix())
-            vocab = preproc.named_steps['vectorizer'].func.vocab
-        else:
-            # from gensim
-            if pretrain_loc.suffix.endswith('bin'):
-                preproc = KeyedVectors.load_word2vec_format(pretrain_loc.as_posix(), 
-                    binary=True)
-            else:
-                preproc = KeyedVectors.load(pretrain_loc.as_posix(), mmap='r')
-            vocab = preproc.vocab
-    elif pretrain_loc == 'train':
-        # training word embedding on the fly
-        vocab = VocabularyDict(os.path.join(data_dir, 'treebased_phrases_vocab'))
-        preproc = construct_preprocessor(vocabulary=vocab)
-    elif pretrain_loc.startswith('en'):
-        # loading model from Spacy
-        vocab, preproc = load_from('spacy', pretrain_loc)
+    n_components, n_words = -1, -1
+    if pretrain_loc:
+        patch_pickled_preproc(pretrain_loc)
     else:
         # don't need pretrain word embedding for example, using single classifier 
         vocab, preproc = None, None
-
+    n_words = len(vocab)
     features = transform_features(os.path.join(data_dir, csv_file), n_rows=n_rows, preproc=preproc,
                 vocab=vocab)
 
@@ -562,15 +490,8 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
         'phrases': features['phrases'][test], 
         'sentiments': features['sentiments'][test]})
 
-    if preproc and isinstance(preproc, Pipeline):
-        if len(preproc.steps) == 1:
-            logging.info("preprocessor is loaded from %s using n_components=%d n_words=%d" %
-                (pretrain_loc, preproc.named_steps['transformer'].func.max_features, 
-                    len(preproc.named_steps['transformer'].func.model.vocab)))
-        else:
-            logging.info("preprocessor is loaded from %s using n_components=%d n_words=%d" %
-                (pretrain_loc, preproc.named_steps['decomposer'].n_components, 
-                    len(preproc.named_steps['vectorizer'].func.vocab)))
+    logging.info("preprocessor is loaded from %s using n_components=%d n_words=%d" %
+            (pretrain_loc, n_components, n_words))
 
     return preproc, (train_features, targets[train]), \
         (valid_features, targets[valid]), (test_features, targets[test])
@@ -580,72 +501,116 @@ def simple_split(x):
     return x.split() 
 
 
-def construct_model(weights, cvkwargs, gridkwargs, preproc=None):
+def construct_weight_model(preproc, predictor_maker, max_level, cvkwargs, gridkwargs, 
+    strategy, global_propc=False, n_classes=5, **modelkwargs):
+
     """
-    providing default construction for the classifier models mainly for weights
+    providing default construction for the label predictor mainly for weights
     selection in cross-validation settings
 
     Parameters
     ----------
-    @param weights: dict
-        a dict storing differen sample weighting schemes each entry providing
-        the name of weighting scheme and numpy.ndarray which contain weights
-        for each training samples
+    @param preproc: scikit-learn BaseEstimator or TransformMixin instance
+        instance used to transform text features into numerical ones
+    @param predictor_maker: string
+         used to construct non-root sentiments predictors. avaiable options are "gnb" (GaussianNB),
+         "dumb" (DummyClassifier) and "mnb" (MultiNomialNB, working on)
+    @param max_level: int
+         the maximal level used to construct non-root sentiments predictors
     @param cvkwargs: dict
         additional keywords will be passed into scikit-learn cross-validaiton
         instance
     @param gridkwargs: dict
         additional keywords will be passed into scikit-learn GridSearchCV
         instance 
-    @param preproc: scikit-learn BaseEstimator or TransformMixin instance
-        instance used to transform text features into numerical ones
-    """
-    base_dict = {}
-    if not preproc:
-        base_dict = {'preprocessor__vectorizer__ngram_range': [(1, 1)], 
-                'preprocessor__decomposer__n_components':
-                numpy.linspace(50, 100, 1, dtype=numpy.int)}
-    params = [
-            {'normalizer': [StandardScaler()], 'classifier': [GaussianNB()]},
-            {'normalizer': [SoftMaxScaler()], 'classifier': [MultinomialNB()],
-                'classifier__alpha': numpy.logspace(-2, 0, 1)}
-             ]
-    for param in params:
-        param.update(base_dict)
-
-    estimator = construct_naive_bayes(preproc)
-    searchers = OrderedDict()
-    # sentence only
-    no_sentid_cv = StratifiedKFold(**cvkwargs)
-    searchers['sentence_only'] = GridSearchCV(estimator=clone(estimator),
-            param_grid=params, scoring=make_scorer(),
-            cv=no_sentid_cv, **gridkwargs)
+    @param strategy: string
+        indicate what probability calibration strategy should be taken. available options are 
+        "calibrated" or "ovr" (global CalibratedClassifierCV calibrate the predict_proba output of AdaBoost)
+        "ada" (local CalibratedClassifierCV calibrate the predict_proba output of AdaBoost's base estimator)
+        None without any proability calibration
+    @param global_propc: bool
+        indicate if using a global preprocessor. doens't take effect in this function
+    @param n_classes: int
+        number of sentiment categories used for classification work (only accepts 2 or 5)
+    @param modelkwargs: other keywords parameters passed to construct label predictor
+  
+    """    
+    modelkwargs['weight_init'] = None
+    if 'random_state' in modelkwargs:
+        seed = modelkwargs.pop('random_state', None)
 
     # split based on the y-labels without considering sentence ids
-    searchers['no_sentid'] = GridSearchCV(estimator=clone(estimator),
-            param_grid=params, scoring=make_scorer(construct_score),
-            cv=no_sentid_cv, **gridkwargs)
+    no_sentid_cv = StratifiedKFold(**cvkwargs)
+    # split based on id 
+    groupcvkws = cvkwargs.copy()
+    if 'n_splits' in groupcvkws:
+        groupcvkws['test_size'] = 1 / groupcvkws['n_splits']
+    if 'shuffle' in groupcvkws:
+        groupcvkws.pop('shuffle', None)
 
-    sentid_cv = GroupKFold(n_splits=cvkwargs.get('n_splits'))
-    # cv based on setence_id without weighting
-    searchers['no_weight_sentid'] = GridSearchCV(estimator=clone(estimator),
-            param_grid=params, scoring=make_scorer(construct_score),
-            cv=sentid_cv, **gridkwargs)
+    sentid_cv = GroupShuffleSplit(**groupcvkws)  # don't use GroupKFold
 
-    # cv based on setence_id with equal weighting
-    searchers['weight_by_size'] = GridSearchCV(estimator=clone(estimator),
-            param_grid=params, scoring=make_scorer(construct_score),
-            cv=sentid_cv, fit_params={
-                'classifier__sample_weight': weights['weight_by_size']},
-            **gridkwargs)
+    # adding calibrator
+    wrappedkws, params = {}, None
+    if strategy in ['calibrated', 'ovr']:
+        params = {'base_estimator__weight_init': [None, 
+                partial(compute_weights, 'weight_by_size'), # the shorter sentence the higher weight
+                partial(compute_weights, 'weight_by_node')], # the higher level the lower weight   
+              }
+        control_searcher = GridSearchCV(estimator=CalibratedClassifierCV(
+                                            base_estimator=predictor_maker(**modelkwargs),
+                                            cv=StratifiedShuffleSplit(n_splits=1, test_size=0.2, 
+                                                                      random_state=seed), 
+                                            method='sigmoid'),
+                                        param_grid=params,
+                                        cv=no_sentid_cv, **gridkwargs)
+    
+        label_searcher = GridSearchCV(estimator=CalibratedClassifierCV(
+                                            base_estimator=predictor_maker(**modelkwargs),
+                                            cv=GroupShuffleSplit(n_splits=1, test_size=0.2, 
+                                                                 random_state=seed),
+                                            method='sigmoid'),
+                                        param_grid=params, 
+                                        cv=sentid_cv, **gridkwargs)
+    elif strategy in ['ada']:
+        params = {'weight_init': [None, 
+                    partial(compute_weights, 'weight_by_size'), # the shorter sentence the higher weight
+                    partial(compute_weights, 'weight_by_node')], # the higher level the lower weight   
+                  }
+        control_searcher = GridSearchCV(estimator=WeightAdaBoostClassifier(
+                                            base_estimator=predictor_maker(
+                                                    cv=StratifiedShuffleSplit(n_splits=1, test_size=0.2, 
+                                                                              random_state=seed), 
+                                                    **modelkwargs),
+                                            weight_init=None), 
+                                        param_grid=params, 
+                                        cv=no_sentid_cv, **gridkwargs)
+    
+        label_searcher = GridSearchCV(estimator=WeightAdaBoostClassifier(
+                                            base_estimator=predictor_maker(
+                                                    cv=GroupShuffleSplit(n_splits=1, test_size=0.2,
+                                                                         random_state=seed), 
+                                                    **modelkwargs),
+                                            weight_init=None),
+                                        param_grid=params, 
+                                        cv=sentid_cv, **gridkwargs)
+    else:
+        params = {'weight_init': [None, 
+                    partial(compute_weights, 'weight_by_size'), # the shorter sentence the higher weight
+                    partial(compute_weights, 'weight_by_node')], # the higher level the lower weight   
+                  }
+                   
+        control_searcher = GridSearchCV(estimator=predictor_maker(**modelkwargs),
+                                            param_grid=params, 
+                                            scoring=make_scorer(construct_score),
+                                            cv=no_sentid_cv, **gridkwargs)
+    
+        label_searcher = GridSearchCV(estimator=predictor_maker(**modelkwargs),
+                                            param_grid=params, 
+                                            scoring=make_scorer(construct_score),
+                                            cv=sentid_cv, **gridkwargs)
 
-    # cv based on setence_id with tree_size weighting
-    searchers['weight_by_node'] = GridSearchCV(estimator=clone(estimator),
-            param_grid=params, scoring=make_scorer(construct_score),
-            cv=sentid_cv, fit_params={
-                'classifier__sample_weight': weights['weight_by_node']},
-            **gridkwargs)
-    return searchers
+    return label_searcher, control_searcher
 
 
 class _fit_and_score(object):
@@ -1016,6 +981,37 @@ def multiple_naives(preproc, predictor_maker, vectorizer, max_level,
     global_propc=False, n_classes=5, **modelkwargs):
     """
     construct multiple classifiers for each level 
+
+    Parameters
+    ----------
+    @param preproc: scikit-learn BaseEstimator or TransformMixin instance
+        instance used to transform text features into numerical ones
+    @param predictor_maker: string
+         used to construct non-root sentiments predictors. avaiable options are "gnb" (GaussianNB),
+         "dumb" (DummyClassifier) and "mnb" (MultiNomialNB, working on)
+    @param max_level: int
+         the maximal level used to construct non-root sentiments predictors
+    @param train_features: pandas.DataFrame
+        store the training feaures for training set
+    @param train_targets: numpy.array
+        store the root sentiments for training set
+    @param cvkwargs: dict
+        additional keywords will be passed into scikit-learn cross-validaiton
+        instance
+    @param gridkwargs: dict
+        additional keywords will be passed into scikit-learn GridSearchCV
+        instance 
+    @param strategy: string
+        indicate what probability calibration strategy should be taken. available options are 
+        "calibrated"  (global CalibratedClassifierCV calibrate the predict_proba output of label predictor)
+        "ovr"  (local CalibratedClassifierCV calibrate the predict_proba output of label predictor)
+        "biased" (doing biased expriment, no probability calibration)
+        None (no calibration)
+    @param global_propc: bool
+        indicate if using a global preprocessor. doens't take effect in this function
+    @param n_classes: int
+        number of sentiment categories used for classification work (only accepts 2 or 5)
+    @param modelkwargs: other keywords parameters passed to construct label predictor
     """
     normalized = modelkwargs.get('normalized')
     if global_propc:
@@ -1129,6 +1125,12 @@ def recursive_construct(predictor_type):
             else:
                 strategy_ = clf_name
                 predictor_maker = predictor_construct[base_clf]
+    
+    """currently not consider handle partial(partial<>) recursive construct
+    if strategy_ in predictor_construct:
+        predictor_maker = partial(predictor_construct[strategy_ ], predictor_maker)
+        strategy_ = None
+    """
     return predictor_maker, clf_name, strategy_
 
 
@@ -1358,74 +1360,83 @@ def run_stacking_classifiers(csv_file, classifier_type, predictor_type, max_leve
     gridkwargs.update({'cv': StratifiedKFold(**cvkwargs)})      
  
 
-def run_cross_validation(csv_file, cvkwargs, gridkwargs, **kwargs):
-    """
-    employ four naive bayes with different sample weights
-    """
-    classifiers = {'no_sentid_nmb': None, 'no_weight_sentid_nmb': None,
-                   'weight_by_size_nmb': None, 'weight_by_node_nmb': None,
-                   'sentence_only_nmb': None}
-    readables = {
-        'no_sentid' : 'no weighting (random cv)',
-        'no_weight_sentid' : 'no weighting (sentence based cv)',
-        'weight_by_size' : 'uniform weight by phrase size (sentence based cv)',
-        'weight_by_node' : 'unequal weight by tree node (sentence based cv)',
-        'sentence_only': 'not including partial phrases'}
 
-    pre_split = kwargs.get('predefine', False)
-    seed = kwargs.get('random_state', 42)
-    n_rows=kwargs.get('n_rows', -1)
-    n_classes = kwargs.get('n_classes', 5)
-    pretrain_loc = kwargs.get('pretrain_model')
-    vocab = kwargs.get('vocab', os.path.join(data_dir,
-        'treebased_phrases_vocab'))
+def run_sample_weight_cv(csv_file, predictor_type, max_level, pretrain_loc, 
+    cvkwargs, gridkwargs, batch_mode=False, presort=False, n_rows=-1, 
+    n_classes=5, **kwargs):
+    """
+    employ four boosted naive bayes with different sample weights
 
+    @param: csv_file: string
+        file path for the extracted phrases and releveant information from parsing trees
+    @param: predictor_type: string
+        used to construct non-root sentiments predictors. avaiable options are "gnb" (GaussianNB),
+         "dumb" (DummyClassifier) and "mnb" (MultiNomialNB, working on)
+    @param: max_level: int
+        the maximal level used to construct non-root sentiments predictors
+    @param pretrain_loc: string
+        file path for the pre-train word embedding
+    @param cvkwargs: dict
+        keyword arguments to pass to construct cross-validation instance
+    @param gridkwargs: dict
+        keyword arguments to pass to construct GridSearchCV instance (not including cv)
+    @param presort: bool
+        if True, will sorting training examples based on their size
+    @param n_rows: int
+        the number of rows will be read in; when n_rows = -1, will read in all the rows
+    @param n_classes: int
+        number of sentiment categories used for classification work (only accepts 2 or 5)
+    @param kwargs: dict
+        keyword arguments to pass to classifier construction
+
+    """
     preproc, (train_features, train_targets), (valid_features, valid_targets), \
-        (test_features, test_targets) = preload_helper(csv_file, n_rows=n_rows)
+        (test_features, test_targets) = preload_helper(
+            csv_file, pretrain_loc=pretrain_loc, n_rows=n_rows)
 
-    # construct train / test split
-    try:
-        check_is_fitted(preproc.steps[-1][-1], 'components_')
-    except AttributeError:
-        preproc.fit(numpy.asarray(wordtokens)[train])
-        joblib.dump(preproc, os.path.join(data_dir, 'TruncatedSVD.model'))
+    predictor_maker, clf_name, strategy_ = recursive_construct(predictor_type)
+    if clf_name =='ada' and max_level != 1:
+        max_level = 1
+  
+    label_searcher, control_searcher = construct_weight_model(preproc, predictor_maker, 
+        max_level, cvkwargs, gridkwargs, strategy_, **kwargs)
 
-    train_mats = preproc.transform(train_features['phrases'])
-    train_weights = train_features['weights']
-    train_sentiments = train_features['sentiments']
+    train_mats, train_sentiments = phrase_only_transformation(preproc, train_features)
     
-    test_mats = preproc.transform(test_features['phrases'])
-    test_weights = test_features['weights']
-    test_sentiments = test_features['sentiments']
+    logging.info('start sentidcv + GridSearchCV fitting')
+    start_time = time.time()
+    label_searcher.fit(train_mats, train_sentiments, groups=train_mats['ids'])
+    logging.info(
+        'complete sentidcv + GridSearchCV fitting (#{} samples) in {:.2f} seconds'.format(
+            len(train_mats), time.time() - start_time))
+    param_names = list(chain.from_iterable(map(lambda x: list(x.keys()), 
+                  label_searcher.cv_results_['params'])))
+    best_index = label_searcher.cv_results_['rank_test_score'][0] - 1
 
-    logging.info('complete transforming input to %d-components word vectors' %
-            features.shape[1])
-    searchers = construct_model(train_weights, cvkwargs, gridkwargs, preproc)
+    valid_mats, valid_sentiments = phrase_only_transformation(preproc, valid_features)
+    logging.info('best estimator = {}, average validation score = {:.3f}, '
+                 'test score = {:.3f} out of #{} samples'.format(
+                  param_names[best_index], 
+                  label_searcher.cv_results_['mean_test_score'][best_index],
+                  label_searcher.best_estimator_.score(valid_mats, valid_sentiments), 
+                  len(valid_mats)))
 
-    for name, searcher in searchers.items():
-        logging.info('start GridSearchCV fitting with %s and '
-                     'weighting scheme is %s' % (name, readables[name]))
-        start_time = time.time()
-        if name == 'sentence_only':
-            searcher.fit(train_mats[train_features['level']==0], 
-                train_sentiments[train_features['level']==0])
-        else:
-            searcher.fit(train_mats, train_sentiments,
-                    groups=train_features['ids'])
-        logging.info('complete GridSearchCV fitting with {} (#{} '
-                'samples) in {:.2f} seconds'.format(name, len(phrases),
-                    time.time() - start_time))
-        searchers[name].score(test_mats, test_sentiments)
-        classifiers['%s_nmb' % name] = searcher
-
+    logging.info('start randomcv + GridSearchCV fitting')
+    start_time = time.time()
+    control_searcher.fit(train_mats, train_sentiments)
+    logging.info(
+        'complete sentidcv + GridSearchCV fitting (#{} samples) in {:.2f} seconds'.format(
+        len(train_mats), time.time() - start_time))
+    logging.info('no weighting control, average validation score = {:.3f} '
+                 'test score = {:.3f} out of #{} samples'.format(
+                 control_searcher.cv_results_['mean_test_score'][0],
+                 control_searcher.best_estimator_.score(valid_mats, valid_sentiments),
+                 len(valid_mats)))
+    
     # dump classifiers
-    model_files = [] 
-    for model_name, cls in classifiers.items():
-        fn = pathlib.Path(data_dir).joinpath("%s.model" % (model_name))
-        joblib.dump(cls, fn)
-        model_files.append(fn)
-        logging.info('store {}'.format(str(fn)))
-    return(model_files)
+    fn = pathlib.Path(data_dir).joinpath("weight_%s.model" % (predictor_type))
+    joblib.dump((label_searcher, control_searcher), fn)
+    logging.info('store {}'.format(str(fn)))
 
 
 def configure(config_type):
@@ -1458,13 +1469,18 @@ def configure(config_type):
     return cvkws, gridkws, modelkws
 
 
-avaiables = ['gnb', 'dumb', 'ada_gnb', 'ovr_gnb', 
-             'gscale_gnb', 'mscale_gnb', 'calibrated_gnb',
-             'calibrated_ada_gnb']
+avaiables = ['gnb', 'dumb', 
+             'ada_gnb',  # adaboost with gnb
+             'ovr_gnb',  # ovr gnb with local calibrators
+             'gscale_gnb', 'mscale_gnb', 
+             'calibrated_gnb', 'calibrated_ada_gnb', # global calibrator
+             'ada_ovr_gnb' # local calibrator (calibrator is built on top of gnb not ada)
+             ]
 
 
 def main(*args):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="construct different models and execute experiments")
     parser.add_argument("subcommand", 
         choices=['weight', 'single', 'multi', 'preprocess'],
             help="[weight_training|single_classifier|multi_classifier|preprocess_features]")
@@ -1477,7 +1493,7 @@ def main(*args):
     parser.add_argument("--normalized", action="store_true", help="normalize predicting probability by simply dividing sum")
     parser.add_argument("--pretrain", default='treebased_phrases_vocab.model', 
         help="loading pretrained word-embeddings")
-    parser.add_argument("--classifier", default="tree", 
+    parser.add_argument("--classifier", default="tree", choices=['tree', 'ensemble', 'boost'],
         help="specifying the type of top classifier, options are [tree|ensemble|boost]")
     parser.add_argument("--predictor", default="gnb", choices=avaiables,
         help="specifying the type of label predictors, options are [%s]" % ('|'.join(avaiables)))
@@ -1493,8 +1509,10 @@ def main(*args):
         logging.info("start weighted cross-validation")
         cvkws, gridkws, modelkws = configure('weight')
         cvkws.update({'random_state': data_seed}) # for creating consistent split
-        run_cross_validation(os.path.join(data_dir, args.file),
-                cvkws, gridkws, predefine=args.predefine, n_rows=args.nrows, **modelkws)
+        run_sample_weight_cv(os.path.join(data_dir, args.file), 
+            args.predictor, args.max_levels, args.pretrain, 
+            cvkws, gridkws, presort=args.presort, n_rows=args.nrows, 
+            random_state=model_seed,**modelkws)
     elif args.subcommand.startswith('s'):
         logging.info("start using decision tree to predict sentiment"
                 " file: %s", args.file)

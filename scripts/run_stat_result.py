@@ -18,18 +18,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import logging
+import argparse
 import os
 import re
+import gc
 
 
-__all__ = ['run_analysis', 'unmask_results', 'run_permute']
+__all__ = ['run_analysis', 'unmask_results', 'run_permute', 'get_divergence',
+        'plot_univariate_distribution', 'plot_level_properties', 'plot_total',
+        'plot_resample_properties', 'cal_conditional_prob', 'cal_joint_prob',
+        'VARS']
 
-logging.basicConfig(format='%(asctime)s %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
+
+logging.basicConfig(format='%(asctime)s [%(levelname)s]:%(message)s', datefmt="%Y-%m-%d %H:%S",
+                    level=logging.INFO)
 
 seed = 42
 rng = np.random.RandomState(seed)
-data_dir = os.path.join(os.getenv('WORKSPACE'), 'Kaggle/symlearn/data/')
+data_dir = None
 keepdims_sum = partial(np.apply_over_axes, np.sum)
 sent_colors = ['#98AFC7', '#3090C7', '#48CC7D', '#E47451', '#E77471']
 
@@ -283,7 +289,7 @@ def merge_levels(stat_result, cutoff=6, axis_to_level=0):
             # raise RuntimeError("cannot handle not consecutive merge")
 
         # set mask
-        merged_level = np.arange(len(merge_loc))[merge_loc] - 1
+        merged_level = np.where(merge_loc)[0][0] - 1
         combined = np.vstack([swapped[:merged_level],
             swapped.data[merged_level:].sum(axis=0)[np.newaxis, :],
             np.zeros((max_level - merged_level - 1, ) + swapped.shape[1:],
@@ -421,15 +427,16 @@ def load_batches(stat_file):
     # loading batch results
     iscorrect = False
     with np.load(stat_file.as_posix(), mmap_mode='r') as fd:
-        if 'labels' not in fd:
-            iscorrect = True
-            stat_res, levels, labels = fd['stat'], fd['levels'], fd['lables']
-        else:
-            stat_res, levels, labels = fd['stat'], fd['levels'], fd['labels']
+        #WTF
+        #if 'labels' not in fd:
+        #    iscorrect = True
+        #    stat_res, levels, labels = fd['stat'], fd['levels'], fd['lables']
+        #else:
+        stat_res, levels, labels = fd['stat'], fd['levels'], fd['labels']
 
-    if iscorrect:
-        with open(stat_file.as_posix(), mode='wb') as fp:
-            np.savez(fp, stat=stat_res, labels=labels, levels=levels)
+    #if iscorrect:
+    #    with open(stat_file.as_posix(), mode='wb') as fp:
+    #        np.savez(fp, stat=stat_res, labels=labels, levels=levels)
     return(stat_res, levels, labels)
 
 
@@ -446,15 +453,30 @@ def post_process(levels, labels, max_level):
 
 
 def loadstat_handler(i, stat_file, vocab, **kwargs):
-    max_level = kwargs.get('max_level', 120)
-    n_classes = kwargs.get('n_classes', 5)
+    """
+    load the pre-computed stat_result.*.npz file 
+
+    Parameters
+    ---------- 
+    @param i: int type
+        the index of batch number
+    @param stat_file: string type
+        the name of stat_result.i.npz file
+    @param vocab: 
+
+    possible kwargs are listed following
+    """
+    max_level = kwargs.get('max_level')
+    n_classes = kwargs.get('n_classes')
     offset_ = kwargs.get('offset_', 0)
     size_count = kwargs.get('size_count', 0)
     stat_result = kwargs.get('stat_result', None)
     tree_result = kwargs.get('tree_result', None)
     treefilename = kwargs.get('treefilename', None)
     statfilename = kwargs.get('statfilename', None)
+
     logging.info('start handling {:s}'.format(stat_file.as_posix()))
+
     n_batch = re.findall(r'\w+\.([0-9]+)\.npz', stat_file.name)
     assert(len(n_batch) == 1)
     n_batch = int(n_batch.pop())
@@ -499,6 +521,18 @@ def loadstat_handler(i, stat_file, vocab, **kwargs):
 
 
 def calstat_handler(i, trees, vocab, **kwargs):
+    """
+    compute the required statistics 
+      Parameters
+    ---------- 
+    @param i: int type
+        the index of batch number
+    @param trees: list of ??? type
+        
+    @param vocab: 
+
+    possible kwargs are listed following
+    """
     max_level = kwargs.get('max_level', 120)
     n_classes = kwargs.get('n_classes', 5)
     results = [cnltk.to_networkx(str(tree), vocab, max_level) for tree in
@@ -936,26 +970,45 @@ def plot_resample_properties(divergence, ax, **kwargs):
 
 
 def run_stat_result(include_pattern='stat_result.*.npz', **kwargs):
+    """
+    compute or fetch the required statitistics for analysis 
+
+    
+    Parameters
+    ----------
+    @param include_pattern: string type
+        the file pattern for the pre-computed stat_result
+
+    """
+    batch_size = kwargs.pop('batch_size')
+    ttl_trees = kwargs.pop('ttl_trees')
+
     treefilename = os.path.join(data_dir, 'tree_result.npy')
     statfilename = os.path.join(data_dir, 'stat_result.npy')
-    ttl_trees = kwargs.get('ttl_trees', 11855)
-    batch_size = kwargs.get('batch_size', 1000)
+    
     files = list(Path(data_dir).glob(include_pattern))
+    
     if len(files) == 0:
         # re-run result
         handler = calstat_handler
+        kwargs['tree_file'] = os.path.join(data_dir, 'trees.bin')
     else:
-        # load result
-        assert(ttl_trees // batch_size == len(files))
+        # load results
+        assert(np.ceil(ttl_trees / batch_size) == len(files))
         handler = loadstat_handler
+        kwargs['stat_files'] = files
     offset_, size_count, stat_result, tree_result = 0, 0, None, None
-    run_batch(handler, files, None, **kwargs)
+    run_batch(handler, batch_size, ttl_trees, **kwargs)
     del stat_result
     del tree_result
+    gc.collect()
     return(statfilename, treefilename)
 
 
 def run_boostrap_result(**kwargs):
+    """
+
+    """
     # read stat_result and tree_result from memmap
     treefilename = kwargs.get('treefilename', None)
     statfilename = kwargs.get('statfilename', None)
@@ -992,9 +1045,19 @@ def run_boostrap_result(**kwargs):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s [%(levelname)s]:%(message)s', datefmt="%Y-%m-%d %H:%S",
-            level=logging.INFO)
+    parser = argparse.ArgumentParser(description="execute the parsing tree relevant statistics")
+    # position argument
+    parser.add_argument('subcommand', choices=['stat', 'resample', 'analysis'],
+        help="sub-command to choose execute what functions")
+    parser.add_argument('--data_dir', help="directory store the auxiliary or resulting files", 
+        default=os.path.join(os.getenv('WORKSPACE'), 'Kaggle/symlearn/data/')
+        )
     kwargs = dict([('ttl_trees', 11855), ('batch_size', 1000),
                    ('max_level', 120), ('n_classes', 5)])
-    # run_stat_result(max_level=120, n_classes=5)
-    run_boostrap_result(**kwargs)
+    args = parser.parse_args()
+    if data_dir is None:
+        data_dir = args.data_dir
+    if args.subcommand == 'stat':
+        run_stat_result(**kwargs)
+    elif args.subcommand == 'resample':
+        run_boostrap_result(**kwargs)

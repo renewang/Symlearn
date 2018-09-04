@@ -6,10 +6,11 @@ from functools import cmp_to_key
 from enum import IntEnum
 from scipy import sparse
 
-from recursnn import get_phrases_helper
+from symlearn.utils import get_phrases_helper
 from nltk.tree import Tree
 
-import recursnn.cnltk_trees as cnltk
+from . import cnltk_trees as cnltk
+
 import array as parray
 import networkx
 import scipy
@@ -460,7 +461,8 @@ def to_csgraph(s, vocab, preprocessor=None, max_len=120):
                 queue.appendleft((child_id, child))
             else:
                 child = preprocessor(child)
-                if hasattr(child, '__len__'):
+                if isinstance(child, list):
+                #if hasattr(child, '__len__'):
                     assert(len(child) == 1)
                     child = child.pop()
                 if child not in vocab: #unkown vocabulary

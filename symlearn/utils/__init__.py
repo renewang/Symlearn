@@ -1,9 +1,10 @@
 from .base import (preprocess_dictionary, check_treebased_phrases, 
-                   run_batch, tile_raster_images, compute_inverse,
-                   VocabularyDict)
+                   run_batch, compute_inverse,
+                   VocabularyDict, get_phrases_helper, fit_transform)
 from .WordNormalizer import WordNormalizer, count_vectorizer
 
 import inspect
+
 
 def construct_score(y_true, y_pred, sample_weight=None):
     scores = numpy.zeros((2,))
@@ -22,6 +23,7 @@ def construct_score(y_true, y_pred, sample_weight=None):
             scores[1] = accuracy_score(y_true.data[~y_true.mask], y_pred[~y_true.mask],
                     normalize=True, sample_weight=sample_weight)
     return(scores)
+
 
 def inspect_and_bind(unbound_func, **kwargs):
     """
