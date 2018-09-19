@@ -1,7 +1,9 @@
 from .base import (preprocess_dictionary, check_treebased_phrases, 
                    run_batch, compute_inverse,
                    VocabularyDict, get_phrases_helper, fit_transform)
-from .WordNormalizer import WordNormalizer, count_vectorizer
+from .wordproc import (WordNormalizer, count_vectorizer, WordIndexer, spacy_vectorizer)
+from .scorer import JointScorer
+from . import curve_utils
 
 import inspect
 

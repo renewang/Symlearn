@@ -1,0 +1,1618 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"cat",
+				"categories"
+			],
+			[
+				"mode",
+				"model_selection"
+			],
+			[
+				"mod",
+				"model_selection"
+			],
+			[
+				"utils",
+				"utils"
+			],
+			[
+				"load",
+				"load_process_word2vec"
+			],
+			[
+				"vector",
+				"vectorizer"
+			],
+			[
+				"transfor",
+				"transformer"
+			],
+			[
+				"decompo",
+				"decomposer"
+			],
+			[
+				"nam",
+				"named_steps"
+			],
+			[
+				"transf",
+				"transform"
+			],
+			[
+				"vec",
+				"vectorizer"
+			],
+			[
+				"unpi",
+				"unpickled_doc"
+			],
+			[
+				"random",
+				"random_state"
+			],
+			[
+				"predi",
+				"predictor_maker"
+			],
+			[
+				"predic",
+				"predictor_maker"
+			],
+			[
+				"str",
+				"strategy"
+			],
+			[
+				"flaot",
+				"float32"
+			],
+			[
+				"valid_",
+				"valid_mats"
+			],
+			[
+				"n_",
+				"n_splits"
+			],
+			[
+				"train_",
+				"train_features"
+			],
+			[
+				"p",
+				"pandas"
+			],
+			[
+				"_",
+				"_validate_X_predict"
+			],
+			[
+				"proc",
+				"proc_levels"
+			],
+			[
+				"sen",
+				"sentiments"
+			],
+			[
+				"boo",
+				"boost"
+			],
+			[
+				"weight_by",
+				"weight_by_node"
+			],
+			[
+				"cont",
+				"control_searcher"
+			],
+			[
+				"best",
+				"best_estimator_"
+			],
+			[
+				"prepro",
+				"preproc"
+			],
+			[
+				"label",
+				"label_searchers"
+			],
+			[
+				"weight",
+				"weight_init"
+			],
+			[
+				"wei",
+				"weight_init"
+			],
+			[
+				"spac",
+				"spacy"
+			],
+			[
+				"Num",
+				"NumpyPickler"
+			],
+			[
+				"pickle",
+				"numpy_pickle"
+			],
+			[
+				"max",
+				"max_features"
+			],
+			[
+				"spa",
+				"spacy_vectorizer"
+			],
+			[
+				"wor",
+				"word_model"
+			],
+			[
+				"to",
+				"tokenizer"
+			],
+			[
+				"start",
+				"startswith"
+			],
+			[
+				"csv",
+				"csv_file"
+			],
+			[
+				"predictor_",
+				"predictor_construct"
+			],
+			[
+				"recur",
+				"recursive_construct"
+			],
+			[
+				"predictor",
+				"predictor_type"
+			],
+			[
+				"n_cl",
+				"n_classes"
+			],
+			[
+				"cali",
+				"calibraotr_params"
+			],
+			[
+				"Cali",
+				"CalibratedClassifier"
+			],
+			[
+				"construct_",
+				"construct_calibrator"
+			],
+			[
+				"Ca",
+				"CalibratedClassifier"
+			],
+			[
+				"model",
+				"modelkwargs"
+			],
+			[
+				"norma",
+				"normalized"
+			],
+			[
+				"C",
+				"CalibratedClassifier"
+			],
+			[
+				"wa",
+				"warn"
+			],
+			[
+				"no",
+				"normalized"
+			],
+			[
+				"n_classes",
+				"n_classes_"
+			],
+			[
+				"prep",
+				"preprocessing"
+			],
+			[
+				"labe",
+				"label_binarize"
+			],
+			[
+				"global",
+				"global_propc"
+			],
+			[
+				"sentim",
+				"sentiment_probs"
+			],
+			[
+				"i",
+				"idx_pos_class"
+			],
+			[
+				"No",
+				"NotFittedError"
+			],
+			[
+				"mo",
+				"modelkwargs"
+			],
+			[
+				"assert",
+				"assert_array_equal"
+			],
+			[
+				"n",
+				"numpy"
+			],
+			[
+				"k",
+				"kwargs"
+			],
+			[
+				"pre",
+				"preprocessor"
+			],
+			[
+				"max_",
+				"max_level"
+			],
+			[
+				"label_predictor",
+				"label_predictors"
+			],
+			[
+				"st",
+				"strategy_"
+			],
+			[
+				"star",
+				"strategy_"
+			],
+			[
+				"Stra",
+				"StratifiedShuffleSplit"
+			],
+			[
+				"multiple",
+				"multiple_naives"
+			],
+			[
+				"Ba",
+				"BaseSearchCV"
+			],
+			[
+				"Calib",
+				"CalibratedClassifierCV"
+			],
+			[
+				"br",
+				"brier_score_loss"
+			],
+			[
+				"predict",
+				"predict_proba"
+			],
+			[
+				"stra",
+				"strategy_"
+			],
+			[
+				"g_l",
+				"g_leaky_rate"
+			],
+			[
+				"lea",
+				"leaky_rate"
+			],
+			[
+				"get",
+				"get_default_graph"
+			],
+			[
+				"fl",
+				"float32"
+			],
+			[
+				"get_",
+				"get_batches"
+			],
+			[
+				"Ada",
+				"AdaBoostClassifier"
+			],
+			[
+				"phr",
+				"phrases"
+			],
+			[
+				"ite",
+				"itertools"
+			],
+			[
+				"an",
+				"annotation_typing"
+			],
+			[
+				"label_",
+				"label_searchers"
+			],
+			[
+				"gridkwa",
+				"gridkwargs_pred"
+			],
+			[
+				"para",
+				"parameters"
+			],
+			[
+				"sig",
+				"signature"
+			],
+			[
+				"sparsit",
+				"d_sparsity"
+			],
+			[
+				"d_",
+				"d_readout"
+			],
+			[
+				"get_variable",
+				"get_variable_scope"
+			],
+			[
+				"std",
+				"stderr"
+			],
+			[
+				"get_v",
+				"get_variable"
+			],
+			[
+				"coun",
+				"counter_d_opt"
+			],
+			[
+				"ker",
+				"kernel_initializer"
+			],
+			[
+				"vari",
+				"variable_scope"
+			],
+			[
+				"Gra",
+				"GraphKeys"
+			],
+			[
+				"learn",
+				"learning_rate"
+			],
+			[
+				"sc",
+				"scalar"
+			],
+			[
+				"sum",
+				"summary"
+			],
+			[
+				"summ",
+				"summary"
+			],
+			[
+				"name",
+				"name_scope"
+			],
+			[
+				"na",
+				"name_scope"
+			],
+			[
+				"re",
+				"relu"
+			],
+			[
+				"get_va",
+				"get_variable_scope"
+			],
+			[
+				"deci",
+				"decision_weight_l2"
+			],
+			[
+				"timeou",
+				"timeout"
+			],
+			[
+				"time",
+				"timeout_"
+			],
+			[
+				"exec_",
+				"exec_dec"
+			],
+			[
+				"rando",
+				"RandomState"
+			],
+			[
+				"fur",
+				"future"
+			],
+			[
+				"num",
+				"numpy_pickle"
+			],
+			[
+				"Pi",
+				"Pipeline"
+			],
+			[
+				"n_l",
+				"n_levels"
+			],
+			[
+				"cv",
+				"cvkwargs"
+			],
+			[
+				"values",
+				"values"
+			],
+			[
+				"test_",
+				"test_targets"
+			],
+			[
+				"emp",
+				"employ"
+			],
+			[
+				"sent",
+				"sentiment_probs"
+			],
+			[
+				"len",
+				"lenth_counts"
+			],
+			[
+				"return",
+				"return_counts"
+			],
+			[
+				"ep",
+				"empty"
+			],
+			[
+				"vail",
+				"valid_indices"
+			],
+			[
+				"train",
+				"train_targets"
+			],
+			[
+				"vali",
+				"valid_targets"
+			],
+			[
+				"tarin",
+				"train_targets"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "scripts/exec_helper.py",
+			"settings":
+			{
+				"buffer_size": 6188,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/stanfordSentimentTreebank.py",
+			"settings":
+			{
+				"buffer_size": 6915,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "from sklearn.pipeline import Pipeline\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.base import TransformerMixin\nfrom sklearn.linear_model.base import LinearClassifierMixin\nfrom sklearn.decomposition import TruncatedSVD\nfrom sklearn.model_selection import (ShuffleSplit, StratifiedShuffleSplit,\n                                      KFold)\nfrom sklearn.preprocessing import FunctionTransformer\nfrom sklearn.utils.validation import check_is_fitted, NotFittedError\nfrom nltk.tokenize import SpaceTokenizer\nfrom joblib.numpy_pickle import NumpyUnpickler, NumpyPickler\n\nfrom symlearn.utils import (WordIndexer, fit_transform, VocabularyDict)\nfrom symlearn.recursnn.recursive import RecursiveBrick\nfrom symlearn.recursnn.recursnn_rae import RecursiveAutoEncoder\nfrom symlearn.recursnn.recursnn_drae import RecursiveTreeClassifier, schedule_learning\nfrom symlearn.recursnn.recursnn_helper import _iter_matrix_groups\nfrom exec_helper import patch_pickled_preproc\n\nfrom operator import itemgetter\nfrom unittest.mock import patch\nfrom contextlib import contextmanager\nfrom itertools import accumulate\n\nimport memory_profiler as mprof\n\nimport h5py\nimport os\nimport theano\nimport numpy\nimport logging\nimport inspect\nimport numbers\nimport types\nimport joblib\nimport operator\n\nFORMAT='%(asctime)s:%(levelname)s:%(threadName)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s'\nlogging.basicConfig(format=FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p',\n        level=logging.INFO)\n\n### for memory_profile logging\n# create file handler\nfh = logging.FileHandler(\"memory_profile.log\")\nfh.setLevel(logging.DEBUG)\n\n# create formatter\nformatter = logging.Formatter('%(message)s')\nfh.setFormatter(formatter)\n\nmemprof_logger = mprof.LogFile('memory_profile_log', reportIncrementFlag=True)\nmemprof_logger.logger.addHandler(fh)\n####\n\n\n@contextmanager\ndef proc_data(filename):\n  basename = os.path.splitext(filename)[0]\n  with open(filename, 'r+b') as fp:\n    try:\n      root = h5py.File(\"%s.hdf5\" % (basename), mode='w-')\n      vstr_dtype = h5py.special_dtype(vlen=str)\n      tree_strs = fp.readlines()\n      raw_data = root.create_dataset(\"tree_strs\", shape=(len(tree_strs),), dtype=vstr_dtype)\n      raw_data[:] = tree_strs\n      root.flush()\n      del tree_strs\n    except OSError:\n      root = h5py.File(\"%s.hdf5\" % (basename), mode='r')\n      raw_data = root['tree_strs']\n  yield(raw_data)\n  root.close()\n\n\ndef incremental_learning(classifier, train_data, valid_data, train_sizes, verbose=1,\n        params={}):\n    n_trainsizes  = (len(train) * train_sizes).astype(numpy.int)\n    train_scores, valid_scores = \\\n            numpy.zeros((len(n_trainsizes), 2)), numpy.empty((len(n_trainsizes), 2))\n    train_features, train_targets = train_data \n    train_roots = numpy.asarray([t[0] for t in train_targets]).ravel()\n    valid_features, valid_targets = valid_data \n    valid_roots = numpy.asarray([t[0] for t in valid_targets]).ravel()\n    classes_ = numpy.unique(valid_roots)\n\n    for i, start in enumerate([0] + n_trainsizes[:-1].tolist()):\n        end = n_trainsizes[i]\n        logging.info(\"start {:d}-th training, increment sample size to {:d}, \"\n                     \"distribution of training labels {}\".format(i + 1, end,\n                         numpy.bincount(train_roots)))\n        assert(all(numpy.diff([f.nnz for f in train_features[start:end]]))>=0)\n        classifier.autoencoder = classifier.autoencoder.fit(\n                train_features, **fit_params)\n        classifier.fit(train_features[start:end], train_targets[start:end],\n                **params)\n        train_scores[i] = classifier.score(train_features[start:end],\n                train_targets[start:end], 'error_rate')\n        valid_scores[i] = classifier.score(valid_features, valid_targets,\n                'error_rate')\n        logging.info(\"complete {:<d}th training, valid size = {:<d}, \"\n                \"distribution of \" \"labels {}, train_score={}, \"\n                \"valid_score={}\".format(i + 1, len(valid),\n                    numpy.bincount(valid_roots),\n                    numpy.array_str(numpy.asarray(train_scores[i]), precision=4,\n                        suppress_small=True),\n                    numpy.array_str(numpy.asarray(valid_scores[i]), precision=4,\n                        suppress_small=True)))\n        if i == 0:\n            break\n    return(n_trainsizes, train_scores, valid_scores)\n\n \n\ndef load_preproc(**kwargs):\n    pretrain_loc = kwargs.get('pretrain_loc', None)\n    preproc = patch_pickled_preproc(pretrain_loc)\n    # hacks to shrink the vocabulary size along with components_\n    # only keep 100 for testing, should be removed for the final model\n    ovocab = preproc.named_steps['vectorizer'].func.vocab\n    # manually patch max_features default value\n    ovocab.max_features = numpy.inf\n    nvocab = VocabularyDict(ovocab, max_features=100)\n    preproc.named_steps['vectorizer'].func.vocab = nvocab\n    oembed = preproc.named_steps['decomposer'].components_\n    nembed = numpy.empty((oembed.shape[0], 101), dtype=oembed.dtype)\n    nembed[:, :100]= oembed[:, :100]\n    nembed[:, -1] = oembed[:, -1]\n    preproc.named_steps['decomposer'].components_ = nembed\n    preproc = Pipeline(steps=[\n        ('indexer', FunctionTransformer(func=WordIndexer(preproc),\n            validate=False, pass_y=True)),\n        ('sorter', FunctionTransformer(func=schedule_learning(),\n            validate=False, pass_y=True)),\n    ])\n    for name, trans in preproc.steps:\n        setattr(trans, 'fit_transform', types.MethodType(fit_transform, trans))\n    return(preproc)\n\n\ndef construct_model(**kwargs):\n    classifier = RecursiveTreeClassifier(**kwargs)\n    return(classifier)\n\n\ndef preprocess(preproc, raw_data, **fit_params):\n    assert(len(raw_data) <= 2)\n    if len(raw_data) == 1:  # training data is parsing tree\n        raw_x = raw_data[0]\n        raw_y = [None for i in range(len(raw_x))] \n    else:\n        raw_x, raw_y = raw_data\n    if not isinstance(raw_x, (numpy.ndarray)):\n        features = numpy.asarray(raw_x)\n    else:\n        features = raw_x\n    if not isinstance(raw_y, (numpy.ndarray)):\n        targets = numpy.asarray(raw_y)\n    else:\n        targets = raw_y\n    features, targets = preproc.fit_transform(features, targets,\n            **fit_params)\n    assert(not fit_params.get('sorter__is_order') or all(numpy.diff([f.nnz for\n        f in features])>=0))\n    return(features, targets)\n\n\ndef proc_learning(classifier, train_data, valid_data, **fit_kws):\n    samplesizes = fit_kws.get(\"train_sizes\", numpy.linspace(0.1, 1.0, 5))\n    learning_func = fit_kws.pop(\"learn_func\", incremental_learning)\n    scorer = fit_kws.pop('scorer', None)\n    fit_params = fit_kws.pop('fit_params')\n\n    ttl_size = numpy.asarray(train_features).size * \\\n        numpy.asarray(train_features).dtype.itemsize * \\\n            numpy.max(samplesizes) / (1024**2)\n\n    logging.info('start training with training size %d (%.2f MB in memory)' % (\n            len(train_features) * numpy.max(samplesizes), ttl_size))\n    start_time = time.time()\n    learning_res = learning_func(classifier, train_data, valid_data,\n            train_sizes=samplesizes, verbose=1, params=fit_params)\n\n    logging.info('complete training in total time %.2f seconds' % (time.time() - start_time))\n    logging.info('sample size is {!r}'.format(learning_res[0]))\n\n    logging.info('training score of root labels is {!r}'.format(\n        numpy.array_repr(learning_res[1][:, 0], precision=3, suppress_small=True)))\n    logging.info('validate score of root labels is {!r}'.format(\n        numpy.array_repr(learning_res[2][:, 0], precision=3, suppress_small=True)))\n    logging.info('training score of not-root labels is {!r}'.format(\n        numpy.array_repr(learning_res[1][:, 1], precision=3, suppress_small=True)))\n    logging.info('validate score of not-root labels is {!r}'.format(\n        numpy.array_repr(learning_res[2][:, 1], precision=3, suppress_small=True)))\n    return(learning_res)\n\n\ndef inspect_profile(data, proc_func, filename=None):\n    if filename is None:\n        filename = 'recursive.prof'\n    exec_func = partial(proc_func, (data,),\n            dict([('random_state', cmd_args.seed),\n                  ('learning_rate', cmd_args.lr)]),\n            dict([('examples', nrows),\n                  ('batch_size', cmd_args.bsize)]))\n    cProfile.run('result = exec_func()', filename)\n    logging.info(\"profile %s with #%d-samples \" %(proc_func.__name__,\n        len(data)))\n    prof_stat = pstats.Stats()\n    prof_stat.strip_dirs().sort_stats(-1).print_stats()\n\n\ndef proc_train_test_split(y, **kwargs):\n    \"\"\"\n    @param cv_class the class used for cross-validation \n    @param is_stratified \n\n    @return indices of training and test set in tuple and a iterator which will\n    yield the indices for each validation set\n    \"\"\"\n    presplit = kwargs.pop('predefine', False)\n    if presplit:\n        predefine = [('n_train', 8544), ('n_dev', 1101), ('n_test', 2210)]\n        logging.info(\"using predefine split #train={n_train} #valid={n_dev} \"\n                \"#test={n_test}\".format(**dict(predefine)))\n        sizes = numpy.asarray(list(accumulate(map(itemgetter(1), predefine),\n            operator.add)))\n        train_idx = numpy.arange(sizes[-1])\n        return(train_idx[:sizes[0]], train_idx[sizes[0]:sizes[1]], \n                train_idx[sizes[1]:sizes[-1]])\n    else:\n        indices = None \n        splitter = ShuffleSplit(**kwargs)\n        for full_train, test in splitter.split(y, y):\n            for train, valid in splitter.split(full_train, full_train):\n                indices = (train, valid, test)\n        logging.info(\"using predefine split #train={n_train} #valid={n_dev} \"\n                \"#test={n_test}\".format(n_train=len(indices[0]),\n                n_dev=len(indices[1]), n_test=len(indices[-1])))\n        return(indices)\n\n\ndef get_root_label(tree_strs):\n    \"\"\"\n    a quick way to get root label\n    \"\"\"\n    return([int(s.strip()[1]) for s in tree_strs])\n\n\nif __name__ == '__main__':\n    from functools import partial\n    import argparse\n    import cProfile\n    import pstats\n    import os\n    import time\n\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"subcommand\", help='[learnig]')\n    parser.add_argument(\"-f\", \"--file\", dest='file', action=\"store_const\",\n            const=os.path.join(os.path.dirname(__file__), '../data/trees.bin'),\n            help=\"supplying cvs file for tree-based phrases\")\n    parser.add_argument(\"-n\", \"--nrows\", dest='nrows', action=\"store\",\n            default=-1, type=int,\n            help=\"supplying how many examples readin from file\")\n    parser.add_argument(\"-b\", \"--batch_size\", dest='bsize', action=\"store\",\n            default=1, type=int,\n            help=\"the size of batch for the mini-batch training\")\n    parser.add_argument(\"-s\", \"--seed\", dest='seed', action=\"store\",\n            default=42, type=int,\n            help=\"the seed used to create random generator\")\n    parser.add_argument(\"-e\", \"--encoder-only\", dest='enc', action=\"store_const\",\n            const=True, help=\"only train autoencoder\")\n    parser.add_argument(\"-l\", \"--learning_rate\", dest='lr', action=\"append\",\n            type=float, required=True,\n            help=\"the learning rate used for gradient descent method\")\n    parser.add_argument(\"--predefine\", action=\"store_true\", help=\"using predefined split\")\n    parser.add_argument(\"--preproc\", dest='preproc', action=\"store_const\",\n            const=os.path.join(os.path.dirname(__file__), \n                '../data/treebased_phrases_vocab.model'),\n            help=\"supplying model file for vocabulary mapping to word index\")\n\n    cmd_args = parser.parse_args()\n\n    nrows = cmd_args.nrows\n    with proc_data(cmd_args.file) as stream:\n        tree_strs = stream\n        if nrows == -1:\n            nrows = len(tree_strs)\n\n        true_root =  get_root_label(tree_strs[:nrows])\n        train, valid, test = proc_train_test_split(true_root,\n                predefine=cmd_args.predefine)\n        raw_data = numpy.asarray(tree_strs[:nrows])\n\n        # preprocess\n        preproc = load_preproc(pretrain_loc=cmd_args.preproc)                                             \n                                              \n        train_features, train_targets = preprocess(preproc, (raw_data[train],),\n                sorter__is_order=True)\n        valid_features, valid_targets = preprocess(preproc, (raw_data[valid],),\n                sorter__is_order=False)\n        init_emb = \\\n            preproc.get_params()['indexer__func'].preprocessor.named_steps[\n                    'decomposer'].components_.T\n        vocab_size, n_components = init_emb.shape\n        assert(cmd_args.lr is not None)\n        if not hasattr(cmd_args.lr, '__len__'):\n            lr_rates = [cmd_args.lr]\n        else:\n            lr_rates = cmd_args.lr.copy()\n        finetune_rate = lr_rates.pop() \n        pretrain_rate = finetune_rate\n        if len(lr_rates) > 0:\n            pretrain_rate = lr_rates.pop()\n        classifier = construct_model(n_components=n_components,\n                vocab_size=vocab_size - 1,  # minus one since blocks will\n                                            # automatically add\n                random_state=cmd_args.seed,\n                learning_rate=finetune_rate)\n        classifier.set_params(learning_rate=pretrain_rate, \n                autoencoder__model={'/treeop_wrapper/embed.W':init_emb})\n        fit_params = {\n                'examples': len(train),\n                'batch_size': cmd_args.bsize,\n                'log_backend': 'python'\n                }\n        learning_res = proc_learning(classifier, (train_features,\n            train_targets), (valid_features, valid_targets),\n            fit_params=fit_params)\n        test_features, test_targets = preprocess(preproc, (raw_data[test],),\n                sorter__is_order=False)\n        acc = classifier.score(test_features, test_targets, 'error_rate', examples=len(test),\n                batch_size=1)\n        logging.info(\"%s test with #%d-samples and testing accuracy(root, \"\n                \"not_roots)=(%.3f, %.3f)\" %(str(classifier), len(test), *acc))\n",
+			"file": "scripts/run_recursnn_drae.py",
+			"file_size": 14067,
+			"file_write_time": 131807005010000000,
+			"settings":
+			{
+				"buffer_size": 14128,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "symlearn/utils/wordproc.py",
+			"settings":
+			{
+				"buffer_size": 12467,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "symlearn/recursnn/recursnn_rae.py",
+			"settings":
+			{
+				"buffer_size": 31036,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "symlearn/blocks/bricks/base.py",
+			"settings":
+			{
+				"buffer_size": 34638,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Searching 187 files for \"WordIndexer\" (regex, case sensitive)\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/boost_dumb_multi.model:\n    File too large, skipping\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/ensemble_dumb_multi.model:\n    File too large, skipping\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/GoogleNews-vectors-negative300.bin:\n    File too large, skipping\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/run_recursnn_drae.py:\n   11  from joblib.numpy_pickle import NumpyUnpickler, NumpyPickler\n   12  \n   13: from symlearn.utils import (WordIndexer, fit_transform, VocabularyDict)\n   14  from symlearn.recursnn.recursive import RecursiveBrick\n   15  from symlearn.recursnn.recursnn_rae import RecursiveAutoEncoder\n   ..\n  128      preproc.named_steps['decomposer'].components_ = nembed\n  129      preproc = Pipeline(steps=[\n  130:         ('indexer', FunctionTransformer(func=WordIndexer(preproc),\n  131              validate=False, pass_y=True)),\n  132          ('sorter', FunctionTransformer(func=schedule_learning(),\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/base.py:\n  194      current patch to solve FunctionTransformer problem\n  195      \"\"\"\n  196:     from .wordproc import WordIndexer\n  197:     if isinstance(inst.func, WordIndexer):\n  198          return(inst.transform(X, y, **fit_param))\n  199      elif fit_param.get('is_order', None):\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/wordproc.py:\n  282  \n  283  \n  284: class WordIndexer(object):\n  285      \"\"\"\n  286      building greedy trees if input are documents and then construct adjacent\n\n5 matches across 3 files\n\n\nSearching 187 files for \"WordNormalizer\" (regex, case sensitive)\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/boost_dumb_multi.model:\n    File too large, skipping\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/ensemble_dumb_multi.model:\n    File too large, skipping\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/GoogleNews-vectors-negative300.bin:\n    File too large, skipping\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/multi_classifier_exps.pkl:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_ada_gnb_multi.model:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_calibrated_ada_gnb_multi.model:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_calibrated_gnb_multi.model:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_calibrated_gnb_multi.model.1:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_gnb_multi.model:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_gscale_gnb_multi.model:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_mscale_gnb_multi.model:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_ovr_gnb_multi.model:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_ovr_gnb_multi.model.1:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/treebased_phrases_vocab.model:\n    <binary>\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/exec_helper.py:\n    6  from gensim.sklearn_api.w2vmodel import W2VTransformer\n    7  from joblib.numpy_pickle import NumpyUnpickler, NumpyPickler\n    8: from symlearn.utils.WordNormalizer import spacy_vectorizer\n    9  \n   10  from symlearn.utils import (VocabularyDict, count_vectorizer, construct_score, \n   ..\n  112              if str(module) == '_aux':\n  113                  module = sys.modules['aux']\n  114:             if name in ['count_vectorizer', 'WordNormalizer', 'VocabularyDict',\n  115              'construct_score', 'inspect_and_bind']:\n  116                  logging.warn('skipping importing rquired module %s because not found' % module)\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/stanfordSentimentTreebank.py:\n    8  import nltk.parse.stanford as stf \n    9  \n   10: from symlearn.utils import (check_treebased_phrases, VocabularyDict, WordNormalizer)\n   11  \n   12  import numpy\n   ..\n   74          for suffix, kwparams in params:\n   75              stopwords_ = kwparams.pop('stopwords', [])\n   76:             analyzer = WordNormalizer(tokenizer=lambda x: x.strip().lower().split(),\n   77                      **kwparams)\n   78              phrases = phrase_df['phrase'].apply(lambda s: [w for w in analyzer(s)\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/src/symlearn/scripts/run_naive_bayes.py:\n   70          # Only allow safe classes from builtins.\n   71          if not (module in globals() or module in sys.modules):\n   72:             if name in ['count_vectorizer', 'WordNormalizer', 'VocabularyDict',\n   73              'construct_score', 'inspect_and_bind']:\n   74                  logging.warn('skipping importing rquired module %s because not found' % module)\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/src/symlearn/scripts/stanfordSentimentTreebank.py:\n    8  import nltk.parse.stanford as stf \n    9  \n   10: from symlearn.utils import (check_treebased_phrases, VocabularyDict, WordNormalizer)\n   11  \n   12  import numpy\n   ..\n   74          for suffix, kwparams in params:\n   75              stopwords_ = kwparams.pop('stopwords', [])\n   76:             analyzer = WordNormalizer(tokenizer=lambda x: x.strip().lower().split(),\n   77                      **kwparams)\n   78              phrases = phrase_df['phrase'].apply(lambda s: [w for w in analyzer(s)\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/src/symlearn/symlearn/utils/__init__.py:\n    2                     run_batch, tile_raster_images, compute_inverse,\n    3                     VocabularyDict)\n    4: from .WordNormalizer import WordNormalizer, count_vectorizer\n    5  \n    6  import inspect\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/src/symlearn/symlearn/utils/WordNormalizer.py:\n   37  \n   38  \n   39: class WordNormalizer(object):\n   40      \n   41      def __init__(self, tokenizer=None, norm_number=True, norm_punkt=True,\n   ..\n   64          \"\"\"\n   65          serve as tokenizer in CountVectorizer\n   66:         >>> [['a','dog'],['one','cat']] == WordNormalizer()(['a dog','one cat'])\n   67          ... True\n   68:         >>> ['a','dog','and','one','cat'] == WordNormalizer()('a dog and one cat')\n   69          ... True\n   70          \"\"\"\n   ..\n   80          \n   81  \n   82: class WordNormalizerWrapper(BaseEstimator, TransformerMixin):\n   83      def __init__(self, extractor=None, normalizer=None, norm_kwargs={},\n   84              ext_kwargs={}):\n   85          \n   86          if not normalizer:\n   87:             self.normalizer = WordNormalizer()\n   88          elif normalizer is type:\n   89              self.normalizer = normalizer(**norm_kwargs)\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursnn_train.py:\n   19  from collections import OrderedDict, deque\n   20  \n   21: from symlearn.utils.wordproc import WordNormalizer, WordNormalizerWrapper\n   22  from . import recursnn_helper\n   23  \n   ..\n   50      # knock-out stage\n   51      knockout_steps = [\n   52:         ('vectorizer', WordNormalizerWrapper(\n   53:             normalizer=WordNormalizer(\n   54                  norm_number=True, norm_punkt=True))),\n   55          ('transformer', TfidfTransformer(sublinear_tf=True, use_idf=True)),\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/__init__.py:\n    2                     run_batch, compute_inverse,\n    3                     VocabularyDict, get_phrases_helper, fit_transform)\n    4: from .wordproc import WordNormalizer, count_vectorizer, WordIndexer\n    5  from .scorer import JointScorer\n    6  from . import curve_utils\n\n/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/wordproc.py:\n   64  \n   65  \n   66: class WordNormalizer(object):\n   67      \n   68      def __init__(self, tokenizer=None, norm_number=True, norm_punkt=True,\n   ..\n   91          \"\"\"\n   92          serve as tokenizer in CountVectorizer\n   93:         >>> [['a','dog'],['one','cat']] == WordNormalizer()(['a dog','one cat'])\n   94          ... True\n   95:         >>> ['a','dog','and','one','cat'] == WordNormalizer()('a dog and one cat')\n   96          ... True\n   97          \"\"\"\n   ..\n  107          \n  108  \n  109: class WordNormalizerWrapper(BaseEstimator, TransformerMixin):\n  110      def __init__(self, extractor=None, normalizer=None, norm_kwargs={},\n  111              ext_kwargs={}):\n  112          \n  113          if not normalizer:\n  114:             self.normalizer = WordNormalizer()\n  115          elif normalizer is type:\n  116              self.normalizer = normalizer(**norm_kwargs)\n  ...\n  303                  is None)\n  304          self.preprocessor = preprocessor\n  305:         self.analyzer = WordNormalizer(\n  306                  tokenizer=lambda x: x.strip().lower().split(),\n  307                  norm_number=is_norm_num, norm_punkt=is_norm_punkt)\n\n39 matches across 20 files\n",
+			"settings":
+			{
+				"buffer_size": 9384,
+				"line_ending": "Unix",
+				"name": "Find Results",
+				"scratch": true
+			}
+		},
+		{
+			"file": "symlearn/utils/__init__.py",
+			"settings":
+			{
+				"buffer_size": 2072,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "symlearn/recursnn/recursnn_train.py",
+			"settings":
+			{
+				"buffer_size": 8767,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "symlearn/utils/base.py",
+			"settings":
+			{
+				"buffer_size": 7675,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "from sklearn.feature_extraction.text import CountVectorizer\nfrom sklearn.model_selection import cross_val_score\nfrom sklearn.metrics import log_loss, pairwise\nfrom sklearn.ensemble import VotingClassifier, AdaBoostClassifier\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.base import BaseEstimator\nfrom sklearn.base import TransformerMixin\nfrom sklearn.utils.validation import check_is_fitted\nfrom sklearn.utils.validation import NotFittedError\nfrom sklearn.feature_extraction import DictVectorizer\nfrom sklearn.pipeline import FeatureUnion\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.naive_bayes import BernoulliNB\nfrom sklearn.preprocessing import FunctionTransformer\nfrom sklearn.preprocessing import Normalizer, normalize, MaxAbsScaler\nfrom sklearn.preprocessing import OneHotEncoder \nfrom sklearn.feature_extraction.text import (TfidfVectorizer, strip_accents_unicode, \n                                             strip_accents_ascii)\nfrom sklearn.preprocessing import Imputer, LabelEncoder\nfrom sklearn.preprocessing import PolynomialFeatures \nfrom sklearn.kernel_approximation import (Nystroem, RBFSampler, AdditiveChi2Sampler, \n                                          SkewedChi2Sampler)\nfrom sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.naive_bayes import GaussianNB\nfrom sklearn.linear_model import SGDClassifier\nfrom sklearn.ensemble import GradientBoostingClassifier, RandomTreesEmbedding\nfrom sklearn.externals.six import iteritems\nfrom sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit\nfrom sklearn.decomposition import LatentDirichletAllocation\nfrom sklearn.model_selection import validation_curve\nfrom sklearn.manifold import SpectralEmbedding\nfrom sklearn.svm import SVC\nfrom sklearn.model_selection import _search as grid_search\nfrom sklearn.feature_selection import SelectFdr, chi2\nfrom operator import itemgetter\nfrom collections import OrderedDict, defaultdict, Iterable, Counter\nfrom functools import wraps, update_wrapper, partial\nfrom nltk.tokenize.regexp import regexp_tokenize\nfrom wordcloud import WordCloud\nfrom enum import Enum\nfrom scripts.run_naive_bayes import construct_decision_tree\nfrom scripts.run_naive_bayes import cal_learning_curve \n\nfrom symlearn.utils.estimator import ItemSelector, FeatureCombiner\nfrom symlearn.utils import curve_utils, JointScorer\n\nfrom hyperopt import hp\nfrom hyperopt.mongoexp import MongoTrials\nfrom io import StringIO\nfrom itertools import groupby\n\nimport contextlib\nimport scipy as sp\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport traceback\nimport operator\nimport time\nimport numpy\nimport re\nimport os\nimport inspect\nimport sys\nimport multiprocessing\nimport datetime\nimport hyperopt.pyll.base as pyll\nimport logging\n\nlogger = logging.getLogger(__name__)\n\ndef wrap_fit_and_score(train_scores):\n\n    @wraps(grid_search._fit_and_score)\n    def collect_train_score(*args, **kwargs):\n        nonlocal train_scores\n        new_kws = {'return_train_score': True}\n        new_kws.update(kwargs)\n        score_res = _fit_and_score(*args, **new_kws)\n        train_scores.append(score_res[0])\n        return(score_res[1:])\n    return(collect_train_score)\n\ndef remap_naviebayse_proba(bayes, true_y):\n  predictor = bayes\n  expect = true_y\n  def get_prob(X, y=None):\n    nonlocal predictor\n    nonlocal expect\n    try:\n      check_is_fitted(predictor, [\"coef_\"])\n    except NotFittedError:\n      predictor = predictor.fit(X, expect)\n    proba = predictor.predict_proba(X)\n    return(proba)\n  return(get_prob)\n\n\ndef combine_animal_type(X, animal_types):\n    \"\"\"\n    allow generate features with specific group codes\n\n    Parameters\n    ==========\n    X: numpy or scipy sparse matrix of n_samples x n_features dimension which\n    is used to be combined with interactor based on the animal_types  \n    animal_types: numpy or scipy sparse matrix of n_samples x n_group dimension\n    in one-hot-encoding for the animal types\n    \"\"\"\n    # if both are sparse array, then return sparse array\n    if isinstance(X, sp.sparse.spmatrix) and \\\n            isinstance(animal_types, sp.sparse.spmatrix):\n        return(sp.sparse.hstack([animal_types[:, i].multiply(X) \n            for i in range(animal_types.shape[1])], format=X.format,\n            dtype=X.dtype))\n    else:\n        # otherwise, return dense\n        if hasattr(X, 'todense'):\n            X = X.todense()\n        if hasattr(animal_types, 'todense'):\n            anima_types = animal_types.todense()\n        return(numpy.hstack([animal_types[:, i] * X\n            for i in range(animal_types.shape[1])]))\n\n\nclass combine_temporal_info:\n    \"\"\"\n    an experimental function object for converting DateTime information into\n    required format \n    \"\"\"\n    def __init__(self, **kwargs):\n        self.return_raw = kwargs.get('return_raw', False)\n        self.return_histogram = kwargs.get('return_histogram', False)\n        self.as_sorted = kwargs.get('as_sorted', True)\n\n    def cal_density(self, fn, X, y, sample_weights = None):\n        ttl_counts, bins = fn(X, bins='doane', density=True,\n                range=(0, 366))\n        bin_width = bins[1] - bins[0]\n        if not sample_weights is None:\n            wts = Counter(sample_weights)\n\n        @wraps(fn)\n        def histogram(X, sample_weights=None):\n            bin_index = np.floor(X / bin_width).astype(np.int)\n            density = ttl_counts[bin_index]\n            if sample_weights is None:\n               sample_wts = numpy.ones((len(X),))\n            else:\n               assert(not wts is None)\n               sample_wts = np.asarray([wts[s] for s in sample_weights])\n            density *= sample_wts\n            density = normalize(density.reshape(-1, 1), norm=self.norm, axis=0) \n            return(density, bin_index)\n\n        return(histogram)\n\n    def count_yearly_days(self, X, base_scale='h'):\n        dtype = re.sub(r\"\\[.*\\]\", '', str(X.dtype))\n        days = X.astype((\"%s[%c]\" % (dtype, base_scale)))\n        years = X.astype((\"%s[Y]\" % dtype))\n        return((days - years).astype(np.int), years.astype(np.str))\n\n    def __call__(self, X, y=None, **fit_params):\n        assert(isinstance(X, np.ndarray))\n\n        # using DateTime information as categorical features\n        if self.return_raw:\n           days, years = self.count_yearly_days(X, base_scale='D')\n           return([dict([('YearlyEventDays', da), ('Year', ye)]) \n               for da, ye in zip(days, years)]) \n        \n        if self.return_histogram:\n            # compute histogram  \n            if histogram is None:\n               histogram = self.cal_density(np.histogram, days, y, sample_weights=years)\n\n            density, bin_index = histogram(days, sample_weights=years)\n            if density.ndim == 1 or density.shape[1] != 1:\n                density = density.reshape(-1, 1)\n            return(np.hstack(bin_index, density))\n\n        if self.as_sorted:\n            base_units, years = self.count_yearly_days(X, base_scale='h')\n            if fit_params.get('with_year', False):\n                return(numpy.asarray(sorted([(int(ye), da, i) for i, (da, ye)\n                    in enumerate(zip(base_units, years))], key=itemgetter(0, 1)))) \n            else:\n                return(numpy.asarray(sorted([(da, i) for i, (da, ye) in\n                    enumerate(zip(base_units, years))], key=itemgetter(0, 1)))) \n\nclass generlized_additivechi2sampler:\n    \"\"\"\n    an experimental function object to conduct time sampling given time span\n    instead of fixed sample proportion in original AdditiveChi2Sampler\n    \"\"\"\n    def __init__(self, sampler=None, proc_method='mean'):\n        if sampler is None:\n            self.sampler = AdditiveChi2Sampler()\n        else:\n            self.sampler = sampler\n        self.proc_method = proc_method\n\n    def __call__(self, X, temporal_info, y=None):\n        # transform from n_samples to n_timepoint\n        key = numpy.arange(temporal_info.shape[1] - 1).tolist()\n        tp_query = OrderedDict([(timepoint, list(map(itemgetter(-1), group)))\n            for timepoint, group in groupby(temporal_info, itemgetter(*key))])\n        tp2idx = dict([(tp, i) for i , tp in enumerate(tp_query.keys())]) \n\n        if isinstance(X, sp.sparse.spmatrix):\n            Xt = sp.sparse.lil_matrix((len(tp_query), X.shape[1]), dtype=X.dtype)\n        else:\n            Xt = numpy.zeros((len(tp_query), X.shape[1]), dtype=X.dtype)\n        \n        weights = numpy.empty(len(tp_query), dtype=numpy.object) \n        for timepoint, inds_group in tp_query.items(): \n            group_x = X[tuple(inds_group), :] \n            assert(hasattr(group_x, self.proc_method))\n            proc_func = getattr(group_x, self.proc_method)\n            centroid = proc_func(axis=0)\n            if isinstance(centroid, np.matrix):\n                centroid = centroid.A1\n            Xt[tp2idx[timepoint]] = centroid \n            weights[tp2idx[timepoint]] = pairwise.cosine_similarity(\n                    group_x, centroid.reshape(1, -1))\n            assert(numpy.all(weights[tp2idx[timepoint]] > 0))\n\n        # pass to sampler to augment features\n        if isinstance(X, sp.sparse.spmatrix):\n            Xt = type(X)(Xt)\n        Xt = self.sampler.fit_transform(Xt)\n\n        # convert back to n_samples  \n        if isinstance(X, sp.sparse.spmatrix):\n            Xs = sp.sparse.lil_matrix((X.shape[0], Xt.shape[1]), dtype=X.dtype)\n        else:\n            Xs = numpy.zeros((X.shape[0], Xt.shape[1]), dtype=X.dtype)\n        for timepoint, inds_group in tp_query.items():\n            Xs[tuple(inds_group), :] = weights[tp2idx[timepoint]] * Xt[tp2idx[timepoint]]\n        if isinstance(X, sp.sparse.spmatrix):\n            Xs = type(X)(Xs)\n        return(Xs)\n\ndef build_preprocess(phrase, func, **kwargs):\n    replace_dict = {'retr' : 'retriever',\n                    'terr': 'terrier',\n                    'wirehaired': 'wirehair',\n                    'coated': 'coat'}\n    words = func(phrase, **kwargs)\n    return([replace_dict[w] if w in replace_dict else w for w in words])\n  \n\ndef vocabs2index(vocabs):\n  index2vocabs = numpy.empty((len(vocabs),), dtype=training_data['Breed'].dtype)\n  for k, v in vocabs.items():\n    index2vocabs[v] = k\n  return(index2vocabs)\n    \n\ndef show_cluster_result(vocabs, X, spec_cluster):\n  index2vocabs = vocabs2index(vocabs)\n  n_clusters = spec_cluster.n_clusters\n  bicluster_ncuts = list(bicluster_ncut(X, i, spec_cluster)\n                         for i in range(n_clusters))\n  best_idx = np.argsort(bicluster_ncuts)[:n_clusters]\n\n  print()\n  print(\"Best biclusters:\")\n  print(\"----------------\")\n  for idx, cluster in enumerate(best_idx):\n      n_rows, n_cols = spec_cluster.get_shape(cluster)\n      cluster_docs, cluster_words = spec_cluster.get_indices(cluster)\n      if not len(cluster_docs) or not len(cluster_words):\n          continue\n\n      # categories\n      counter = defaultdict(int)\n      for i in cluster_docs:\n          counter[training_data['OutcomeType'].iloc[i]] += 1\n      cat_string = \", \".join(\"{:.0f}% {}\".format(float(c) / n_rows * 100, name)\n                             for name, c in most_common(counter))\n\n      # words\n      out_of_cluster_docs = spec_cluster.row_labels_ != cluster\n      out_of_cluster_docs = np.where(out_of_cluster_docs)[0]\n      word_col = X[:, cluster_words]\n      word_scores = np.array(word_col[cluster_docs, :].sum(axis=0) -\n                             word_col[out_of_cluster_docs, :].sum(axis=0))\n      word_scores = word_scores.ravel()\n      kmost_common = (10 >= len(cluster_words)) * len(cluster_words) + \\\n                     (10 < len(cluster_words)) * 10\n      important_words = list(index2vocabs[cluster_words[i]]\n                             for i in word_scores.argsort()[:-10:-1])\n\n      print(\"bicluster {} : {} documents, {} words\".format(\n          idx, n_rows, n_cols))\n      print(\"categories   : {}\".format(cat_string))\n      print(\"words        : {}\\n\".format(', '.join(important_words)))\n\n\ndef bicluster_ncut(X, i, cluster):\n    rows, cols = cluster.get_indices(i)\n    # if have no members, then return the max values\n    if not (np.any(rows) and np.any(cols)):\n        return sys.float_info.max\n    # finding the rows and cols are not cluster i\n    row_complement = np.nonzero(np.logical_not(cluster.rows_[i]))[0]\n    col_complement = np.nonzero(np.logical_not(cluster.columns_[i]))[0]\n    # Note: the following is identical to X[rows[:, np.newaxis], cols].sum() but\n    # much faster in scipy <= 0.16\n    weight = X[rows][:, cols].sum() # getting total counts\n    # samples are not in desired features / cols and features not in desired rows\n    cut = (X[row_complement][:, cols].sum() +\n           X[rows][:, col_complement].sum())\n    return cut / weight # smaller better\n  \n\ndef most_common(d):\n    \"\"\"Items of a defaultdict(int) with the highest values.\n\n    Like Counter.most_common in Python >=2.7.\n    \"\"\"\n    return sorted(iteritems(d), key=itemgetter(1), reverse=True)\n\n\ndef plot_confusion_matrix(cm, target_names, title='Confusion matrix', cmap=plt.cm.Blues):\n    plt.imshow(cm, interpolation='nearest', cmap=cmap)\n    plt.title(title)\n    # plt.colorbar()\n    tick_marks = np.arange(len(target_names))\n    plt.xticks(tick_marks, target_names, rotation=300)\n    plt.yticks(tick_marks, target_names)\n    plt.tight_layout()\n    plt.ylabel('True label')\n    plt.xlabel('Predicted label')\n\n\n# OutcomeSubType => half missing (17 subtypes including NaN)\n# handle SexuponOutcome => consider to split the column into Male/Female vs Neutered / Spayed / Intact\ndef split_sexuponoutcome(val):\n  if type(val) != str or \"Unknown\" == val:\n    return(np.repeat(\"Unknown\", 2))\n  else: \n    return(val.split(' '))  \n\n\n# AgeuponOutcome => consider to transform the column into years\ndef split_ageuponoutcome(val):\n  unit_map = {'year': 1, 'month': 1/12, 'week': 1/52, 'day': 1/365}\n  if type(val) != str:\n    return(None)\n  else: \n    num, units = val.split(' ')\n    num = float(num)\n    if units in unit_map:\n      scale = unit_map[units]\n    elif units[:-1] in unit_map:\n      scale = unit_map[units[:-1]]\n    return(scale * num)\n\n\ndef building_word_feature(**kwargs):\n    preproc = partial(build_preprocess, func=regexp_tokenize, \n            pattern=r\"(?u)\\b\\w\\w+\\b\") # cannot pickle \n    features = kwargs.pop('features', ['Breed', 'Color'])\n    assert(not 'YearlyEventDays' in features) \n    stacking = []\n    for name in features:\n        procedures = [\n                ('selector', ItemSelector(name)),\n                ('vectorizer', TfidfVectorizer(\n                    binary=False, norm='l2', use_idf=True, smooth_idf=True, \n                    sublinear_tf=True, tokenizer=preproc, dtype=numpy.float64,\n                    strip_accents='ascii', stop_words=['unknown'],\n                    ngram_range=(1, 2)))]\n        feature_name = \"%s_features\" %(name.lower())\n        stacking.append((feature_name, Pipeline(steps=procedures)))\n\n    weights = [(name, 1/len(stacking)) for name, _ in stacking]\n    models = [('generator', FeatureCombiner(\n        [('features', FeatureUnion(stacking, transformer_weights=dict(weights))),\n         ('interactor', Pipeline(steps=[\n             ('selector', ItemSelector('AnimalType')),\n             ('vectorizer', TfidfVectorizer(\n                    binary=True, norm='l2', use_idf=False, smooth_idf=False, \n                    sublinear_tf=False, tokenizer=preproc, dtype=numpy.float64,\n                    strip_accents='ascii', stop_words=['unknown'],\n                    ngram_range=(1, 1)))]))],\n             combine_animal_type))]\n    extractor = Pipeline(models) \n    return(extractor)\n\ndef construct_bow_classifier(**kwargs):\n    n_jobs = kwargs.pop('n_jobs', 1)\n    verbose = kwargs.get('verbose', 0)\n    seed = kwargs.get('random_state', None)\n    steps = []\n\n    extractor = building_word_feature(**kwargs)\n\n    if kwargs.pop(\"sample_time\", True):\n        embedder = FeatureCombiner([\n            ('extractor', extractor), \n            (\"time_features\", Pipeline(steps=[\n                ('selector', ItemSelector('DateTime')),\n                ('vectorizer', FunctionTransformer(\n                    combine_temporal_info(), validate=False, pass_y=True))]))],\n                generlized_additivechi2sampler(sampler=AdditiveChi2Sampler(sample_steps=2)))\n        steps.extend([('embedder' , embedder), ('scaler', MaxAbsScaler())])\n    else:\n        embedder = Pipeline(steps=[\n            ('kernel', AdditiveChi2Sampler()),\n            ('scaler', MaxAbsScaler())])\n        steps.extend([('extractor', extractor), ('embedder', embedder)])\n    if kwargs.pop(\"use_svc\", True):\n        classifier = SVC(C=1.0, kernel='linear', probability=True, verbose=True,\n                decision_function_shape='ovo', max_iter=50, class_weight=None)\n    else:\n        classifier = SGDClassifier(loss='modified_huber', class_weight=None,\n                n_iter=50) \n        if kwargs.pop('use_ovo', False):\n            classifier = OneVsOneClassifier(classifier)\n    steps.append(('classifier', classifier))\n\n    clf = Pipeline(steps=steps)\n\n    params = clf.get_params(deep=True)\n    reset_keys = {s: verbose for s in params.keys() if s.endswith('verbose')}\n    reset_keys.update({s: seed for s in params.keys() if s.endswith('random_state')})\n    reset_keys.update({k: v for k, v in kwargs.items() if k in params})\n    clf.set_params(**reset_keys)\n    return(clf)\n\ndef construct_tree_classifier(**kwargs):\n    select_features = kwargs.get('features', ['AnimalType', 'Sex', 'HasName',\n                                 'ReproductiveStatus', 'LogAgeInYear'])\n    n_jobs = kwargs.pop('n_jobs', 1)\n    verbose = kwargs.get('verbose', 0)\n    seed = kwargs.get('random_state', None)\n    classifier = GradientBoostingClassifier(\n            max_leaf_nodes=kwargs.get('max_leaf_nodes', 8),\n            n_estimators=kwargs.get('n_estimators', 325),\n            learning_rate=kwargs.get('learning_rate', 0.05), \n            subsample=kwargs.get('subsample', 0.7),\n            loss='deviance')\n    if kwargs.pop('use_binary', False):\n        classifier = OneVsRestClassifier(classifier)\n    features = [('main_features', Pipeline([('selector', ItemSelector(select_features)),\n                                    ('vectorizer', DictVectorizer(sparse=False)),\n                                    ('imputer', Imputer(missing_values='NaN', strategy='mean', axis=0)),\n                                    ('generator', PolynomialFeatures(degree=2,\n                                                  interaction_only=True,\n                                                  include_bias=False))])),\n                ('extra_features', Pipeline([('selector', ItemSelector('DateTime')),\n                                     ('generator', FunctionTransformer(\n                                         combine_temporal_info(return_raw=True),\n                                         validate=False, pass_y=True)),\n                                     ('vectorizer', DictVectorizer(sparse=False))]))]\n    if kwargs.pop('use_word', False):\n        extractor = building_word_feature(**kwargs)\n        # need to screen vocabs and then add back AnimalType interactor\n        raw_features = extractor.steps[0][-1].transformer_list[0]\n        extractor.steps[0][-1].transformer_list.remove(raw_features)\n        selector = Pipeline(steps=[raw_features,\n            ('selector', SelectFdr(chi2, alpha=0.05))])\n        extractor.steps[0][-1].transformer_list.insert(\n                0, ('features', selector))\n        extractor.steps.append(('denser', FunctionTransformer(lambda x:\n            x.toarray(),  validate=True, accept_sparse=True)))\n        features.append(('word_features', extractor))\n    weights = {name: 1 / len(features) for name, _ in features}\n    models = [('extractor', FeatureUnion(features, transformer_weights=weights)),\n              ('classifier', classifier)]\n    clf = Pipeline(models)\n\n    params = clf.get_params(deep=True)\n    reset_keys = {s: verbose for s in params.keys() if s.endswith('verbose')}\n    reset_keys.update({s: seed for s in params.keys() if s.endswith('random_state')})\n    clf.set_params(**reset_keys)\n    return(clf)\n\n\ndef tune_training(training_data, searcher_name, params, **kwargs):\n    n_fold = kwargs.pop('n_fold', 5)\n    scoring = kwargs.pop('scoring', 'log_loss')\n    verbosity = kwargs.get('verbosity', 10)\n    n_jobs = kwargs.pop('n_jobs', 1)\n    n_iter = kwargs.pop('n_iter', None)\n\n    classifiers, data_gen = construct_model(training_data, **kwargs)\n    X_train, X_test, test_inds = next(data_gen)\n    y_train, y_test, _ = next(data_gen)\n    y_train = y_train.values\n    y_test = y_test.values\n    results = {}\n    for k, clf in classifiers.items():\n        param_name, param_range = params\n        formal_params = clf.get_params(deep=True)\n        if not param_name in formal_params:\n            logger.info('%s has no parameter %s' %(k, param_name))\n            continue\n\n        search_kw = {'cv': StratifiedKFold(y_train, n_fold, shuffle=False), 'n_jobs': n_jobs,\n                     'scoring': JointScorer(scoring), 'verbose': verbosity}\n\n        if searcher_name == 'hyperopt':\n           searcher = default_hyperopt_setting(**kwargs) \n        elif searcher_name == 'validate':\n            try:\n               retval = validation_curve(clf, X_train, y_train,\n                       *params,**search_kw)\n            except:\n               logger.warning(traceback.format_exc()) \n               continue\n            results[k] = list()\n            results[k].append(('train_scores', retval[0]))\n            results[k].append(('test_scores', retval[1]))\n            results[k].append(('parameters', [(param_name, param_range)]))\n        else:\n            if searcher_name == 'random':\n                if n_iter is None:\n                    n_iter = inspect.signature(\n                            grid_search.RandomizedSearchCV).parameters['n_iter'].default\n                candidates = [row.tolist() for row in param_range.rvs(n_iter * 10)]\n                searcher = grid_search.RandomizedSearchCV(clf, \n                        {param_name: candidates}, **search_kw)\n            elif searcher_name == 'grid':\n                searcher = grid_search.GridSearchCV(clf, dict([params]), **search_kw)\n\n            try:\n                searcher = searcher.fit(X_train, y_train)\n            except:\n               logger.warning(traceback.format_exc()) \n               continue\n            results[k] = list()\n            results[k].append(('test_scores', \n                [gs.cv_validation_scores for gs in searcher.grid_scores_]))\n            pa_lookup = defaultdict(list)\n            for gs in searcher.grid_scores_:\n                for k, v in gs.parameters.items():\n                    pa_lookup[k].append(v)\n            results[k].append(('parameters', pa_lookup))\n        results['y_true'] = test_inds \n    return(classifiers, results)\n\n\ndef batch_training(training_data, **kwargs):\n    n_fold = kwargs.pop('n_fold', 5)\n    scoring = kwargs.pop('scoring', 'log_loss')\n    verbose = kwargs.get('verbose', 10)\n    n_jobs = kwargs.get('n_jobs', 1)\n\n    samplesizes = kwargs.pop('samplesizes', numpy.linspace(0.5, 1.0, 5))\n\n    classifiers, data_gen = construct_model(training_data, **kwargs)\n    X_train, X_test, test_inds = next(data_gen)\n    y_train, y_test, _ = next(data_gen)\n    y_train = y_train.values\n    y_test = y_test.values\n\n    results = {}\n    for k, clf in classifiers.items():\n        results[k] = list()\n        learning_res = cal_learning_curve(clf, X_train, y_train,\n                train_sizes=samplesizes,\n                learn_func=curve_utils.learning_curve,\n                scoring=JointScorer(scoring), verbose=verbose,\n                cv=StratifiedKFold(y_train, n_fold, shuffle=False),\n                exploit_incremental_learning=False,\n                n_jobs=n_jobs)\n        results[k].append(('learning_curve', learning_res))\n\n        clf = clf.fit(X_train, y_train)\n        results[k].append(('train', clf.score(X_train, y_train)))\n        results[k].append(('test', clf.score(X_test, y_test)))\n        results[k].append(('y_pred', clf.predict(X_test)))\n    results['y_true'] = test_inds \n    return(classifiers, results)\n\n\ndef proc_data(filename=os.path.join(os.environ['WORKSPACE'], 'Kaggle/WorkNote/ShelterAnimalOutcomeComp')):\n    # parse_dates receiving 0-indexed \n    training_data = pd.read_csv(os.path.join(filename, \"train.csv\"), parse_dates=[2], infer_datetime_format=True, \n                                keep_date_col=True, na_values={'SexuponOutcome': 'Unknown'});\n\n    # encode outcomeType using LabelEncoder (due to manually encode response\n    # might result in errors in some estimators)\n    if not hasattr(training_data['OutcomeType'], 'cat'):\n      assert(numpy.all(training_data['OutcomeType'].isnull().values)==False)\n      OutcomeType = Enum('OutcomeType', ' '.join(training_data['OutcomeType'].unique()), start=0)\n      # convert to categorical type\n      training_data['OutcomeType'] = training_data['OutcomeType'].astype('category')\n      training_data['OutcomeType'].categories = list(OutcomeType.__members__)\n      training_data['OutcomeCode'] =  training_data['OutcomeType'].apply(lambda x: OutcomeType[x].value)\n      \n    if not hasattr(training_data['OutcomeSubtype'].dtype, 'cat'): \n      def convert_to_subtype(val):\n        if type(val) == str:\n          return(OutcomeSubType[val.replace(' ', '_')].value)\n        else:\n          return(val)\n  \n      OutcomeSubType = Enum('OutcomeSubType', ','.join(\n          map(lambda x: x.replace(\" \", \"_\"), \n              training_data['OutcomeSubtype'][~training_data['OutcomeSubtype'].isnull()].unique())))\n      training_data['SubOutcomeCode'] =  \\\n        training_data['OutcomeSubtype'].apply(convert_to_subtype)\n\n      # convert to categorical type\n      training_data['OutcomeSubtype'] = training_data['OutcomeSubtype'].astype('category') \n      training_data['OutcomeSubtype'].cat.categories = list(OutcomeSubType.__members__)\n      \n    split_result = np.asarray(list(map(split_sexuponoutcome, training_data['SexuponOutcome'].values)))\n    training_data['Sex'] = split_result[:, 1]\n    training_data['ReproductiveStatus'] = split_result[:, 0]\n\n    training_data.loc[training_data['ReproductiveStatus'] == 'Spayed', 'ReproductiveStatus'] = 'Neutered'\n\n    if not hasattr(training_data['Sex'].dtypes, 'cat'):\n      training_data['Sex'] = training_data['Sex'].astype('category')\n    if not hasattr(training_data['ReproductiveStatus'].dtypes, 'cat'):\n      training_data['ReproductiveStatus'] = training_data['ReproductiveStatus'].astype('category')\n\n    training_data['AgeInYear'] = training_data['AgeuponOutcome'].apply(split_ageuponoutcome)\n    training_data['LogAgeInYear'] = training_data['AgeInYear'].apply(lambda x: np.max([np.log(1/8760), np.log(x)]))\n\n    training_data['AnimalTypeCode'] = training_data['AnimalType'].apply(\n      lambda x: 1 * (x == 'Dog') or -1 * (x == 'Cat'))\n    training_data['HasName'] = ~training_data['Name'].isnull()\n    training_data['ProcName'] =  training_data['Name'].fillna(value='Unknown')\n    training_data['YearlyEventDays'] = training_data['DateTime'].apply(lambda\n            d: (d - datetime.datetime(d.year, 1, 1)).days)\n    training_data['AnimalType'] = training_data['AnimalType'].astype('category')\n    training_data['AnimalType'].cat.categories = ['Dog', 'Cat']\n    return(training_data)\n\n\ndef construct_model(training_data, **kwargs):\n    all_features = training_data.columns.tolist()\n    all_features.remove('OutcomeCode')\n\n    X = training_data[all_features]\n    y = training_data['OutcomeCode']\n\n    classifiers = OrderedDict() \n    classifiers['vecfeat_extractor'] = construct_bow_classifier(**kwargs)\n    classifiers['dictfeat_extractor'] = construct_tree_classifier(**kwargs)\n    classifiers['classifier'] = VotingClassifier([('BOW_clf', classifiers['vecfeat_extractor']),\n                                                  ('tree_clf', classifiers['dictfeat_extractor'])],\n                                                  voting='soft',\n                                                  weights=[0.2, 0.8])\n    if kwargs.get('random_split', False):\n        train, test = zip(*StratifiedShuffleSplit(y,\n            random_state=kwargs.get('random_state', None), n_iter=1, test_size=0.2))\n        return(classifiers, map(lambda s: (s.iloc[train], s.iloc[test], test), [X, y]))\n    else:\n        # picking 2014, 2015 examples as training; while 2013 and 2016 as test\n        # data\n        mask = training_data['DateTime'].apply(lambda x: (x.year == 2014 or\n            x.year==2015)).values\n        train = training_data.ix[mask, 'DateTime'].sort_values().index.values\n        test = training_data.ix[\n                numpy.logical_not(mask), 'DateTime'].sort_values().index.values\n        return(classifiers, map(lambda s: (s.iloc[train], s.iloc[test], test), [X, y]))\n          \n\ndef parse_training_output(func, bound_args, output_type):\n    \"\"\"\n    Parameters\n    ==========\n\n    \"\"\"\n    capture_io = StringIO()\n    with contextlib.redirect_stdout(capture_io):\n        func(*bound_args.args, **bound_args.kwargs)\n    output = capture_io.getvalue()\n    if output_type == 'sgd':\n        lines = [line.replace('\\n', ', ').strip('., ') for line in\n                output.split('--') if len(line)]\n        pat = re.compile(r\"(?:([a-zA-Z]+):? (-?\\d+\\.?\\d*))\")\n        stats = [dict(re.findall(pat, line)) for line in lines] \n    capture_io.close()\n    return(stats) \n\nif __name__ == '__main__':\n    import argparse\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--tuning\", \n        help=\"tuning training result with hyperopt\", action=\"store\")\n    parser.add_argument(\"--sampling\", \n        help=\"using small sample for testing\", action=\"store_true\")\n    parser.add_argument(\"--partial\", \n            help=\"parial train with incremental samples\", action=\"store_true\")\n    parser.add_argument(\"--mongodb\", \n            help=\"using mongodb for storing tuning result\")\n    args = parser.parse_args()\n    training_data = proc_data()\n    kwargs = {}\n    if args.sampling is True: \n        select_ind = np.hstack([grpind[:2000] for _, grpind in\n                                training_data.groupby(training_data['OutcomeCode']).indices.items()])\n        select_ind.sort()\n        sample_training = training_data.iloc[select_ind]\n    else:\n        sample_training = training_data\n    if not args.tuning is None:\n        tune_training(sample_training, args.tuning, connect_str=args.mongodb)\n    else:\n        classifiers, results = batch_training(sample_training, **vars(args))\n",
+			"file": "scripts/run_shelter_comp.py",
+			"file_size": 30649,
+			"file_write_time": 131807014700000000,
+			"settings":
+			{
+				"buffer_size": 30650,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/run_naive_bayes.py",
+			"settings":
+			{
+				"buffer_size": 67306,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				":w",
+				":w - Save"
+			],
+			[
+				":0",
+				":0 - BOF"
+			],
+			[
+				"markdown",
+				"Markdown Preview: Preview in Browser"
+			],
+			[
+				"install package",
+				"Package Control: Install Package"
+			],
+			[
+				"",
+				":w - Save"
+			],
+			[
+				":s",
+				":w - Save"
+			],
+			[
+				":",
+				":w - Save"
+			],
+			[
+				"install",
+				"SublimeLinter: Show All Errors"
+			]
+		],
+		"width": 428.0
+	},
+	"console":
+	{
+		"height": 126.0,
+		"history":
+		[
+			"$SHELL -l -c '/usr/bin/which linter'",
+			"hash -r",
+			"print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)",
+			"dh = hashlib.sha256(by).hexdigest()",
+			"by = urllib.request.urlopen( 'http://packagecontrol.io/' + pf.replace(' ', '%20')).read()",
+			"urllib.request.install_opener(urllib.request.build_opener( urllib.request.ProxyHandler()) )",
+			"urllib.request.install_opener(",
+			"ipp",
+			"type(ipp)",
+			"ipp = sublime.installed_packages_path(); ",
+			"dir(pf)",
+			"pf = 'Package Control.sublime-package'",
+			"print(h)",
+			"h = 'df21e130d211cfc94d9b0905775a7c0f' + '1e3d39e33b79698005270310898eea76'",
+			"import urllib.request,os,hashlib",
+			"construct",
+			"sublime.version()"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/recurrent",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils"
+	],
+	"file_history":
+	[
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/src/symlearn/symlearn/utils/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/test_spacy_pickle.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/WordIndexer.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/scripts/run_naive_bayes.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/curve_utils.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/estimator.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/scorer.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/scikit_ext/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/base.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursnn_drae.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursnn_helper.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursnn_rbm.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursnn_rae.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursnn_train.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursnn_dbn.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursnn_da.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursive.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/csgraph/adjmatrix.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/recursnn_utils.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/TreeOps.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/fuel_extensions.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/blocks_extensions.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/filter.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/initialization.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/main_loop.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/model.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/search.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/select.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/serialization.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/theano_expressions.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/bin/fuel_convert.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/recurrent/base.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/recurrent/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/config.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/utils.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/streams.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/server.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/transformers/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/schemes.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/toy.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/text.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/svhn.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/mnist.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/iris.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/hdf5.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/cifar100.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/cifar10.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/caltech101_silhouettes.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/binarized_mnist.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/billion.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/base.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/adult.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/datasets/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/transformers/image.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/transformers/defaults.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/transformers/text.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/fuel/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/monitoring/evaluators.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/monitoring/aggregation.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/wrappers.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/simple.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/sequence_generators.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/parallel.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/lookup.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/cost.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/conv.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/base.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/bricks/attention.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/algorithms/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/extensions/training.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/extensions/saveload.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/extensions/monitoring.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/graph/annotations.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/graph/bn.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/log/log.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/log/sqlite.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/monitoring/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/scripts/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/blocks/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/base.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/recursnn/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/utils/WordNormalizer.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/exec_helper.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/boost.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/_aux.pyx",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/aux.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/src/symlearn/symlearn/utils/base.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/utils/base.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/recursnn/recursnn_utils.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/stanfordSentimentTreebank.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/csgraph/cnltk_trees.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/run_stat_result.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/csgraph/adjmatrix.pyx",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/csgraph/cnltk.pyx",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/run_naive_bayes.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/scikit_ext/WordNormalizer.py",
+		"/Users/renewang/Documents/workspace/Kaggle/stanford_parser/python/py4j_parser.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/csgraph/cnltk.c",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/batch_run_exps.sh",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/recursnn/recursnn_train.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/scikit_ext/WordIndexer.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/aux.pxd",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/recursnn/base.py",
+		"/Users/renewang/Documents/workspace/Kaggle/WorkNote/MercariPriceSuggestionComp/notebooks/model_selection.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/csgraph/__init__.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/csgraph/sampling.py",
+		"/Users/renewang/Documents/e-course/Artificial Intelligence/DeepLearningNano/Projects/nbviewer/image-classification/helper.py",
+		"/Users/renewang/Library/Application Support/Sublime Text 3/Packages/User/Anaconda.sublime-settings",
+		"/Users/renewang/Library/Application Support/Sublime Text 3/Packages/Anaconda/Anaconda.sublime-settings",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/csgraph/adjmatrix.pxd",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn/csgraph/adjmatrix.pyd",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/recursnn/TreeOps.py",
+		"/Users/renewang/Documents/workspace/scikit-learn/sklearn/ensemble/weight_boosting.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/scripts/calibration.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/.git",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/README.md",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/Symlearn.sublime-project",
+		"/Users/renewang/Documents/workspace/tensorflow/tensorflow/examples/speech_commands/train.py",
+		"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/data/tree_ada_gnb_multi.model",
+		"/Users/renewang/Documents/workspace/cpython/Programs/python.c",
+		"/Users/renewang/Documents/workspace/cpython/Modules/main.c",
+		"/Users/renewang/Documents/workspace/cpython/Include/pythonrun.h",
+		"/Users/renewang/Documents/workspace/cpython/Grammar/Grammar",
+		"/Users/renewang/Documents/workspace/cpython/Include/token.h",
+		"/Users/renewang/Documents/workspace/cpython/Parser/parser.c",
+		"/Users/renewang/Documents/workspace/cpython/Parser/tokenizer.c",
+		"/Users/renewang/Documents/workspace/cpython/Python/graminit.c"
+	],
+	"find":
+	{
+		"height": 39.0
+	},
+	"find_in_files":
+	{
+		"height": 101.0,
+		"where_history":
+		[
+			"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/",
+			"/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn/symlearn",
+			"/Users/renewang/Documents/workspace/Kaggle/symlearn"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": true,
+		"find_history":
+		[
+			".copy",
+			"deepcopy",
+			"WordNormalizer",
+			"WordIndexer",
+			"WordNormalizer",
+			"WordIndexer",
+			"^-",
+			"load_from",
+			"English",
+			"spacy",
+			"English",
+			"load_from",
+			"word2vec",
+			"CategoricalDtype",
+			"data_dir",
+			"grid_search",
+			"PyllWrapper",
+			"HyperoptSearchCV",
+			"PyllWrapper",
+			"learning_curve",
+			"grid_search",
+			"cross_validation",
+			"astype",
+			"GroupKFold",
+			"phrase_only_transformation",
+			"RestrictedUnpickler",
+			"fuel",
+			"from fuel",
+			"from blocks",
+			"from fuel",
+			"from blocks",
+			"from blocks.",
+			"from fuel.",
+			"count_vectorizer",
+			"loadstat_handler",
+			"run_stat_result",
+			"run_batch",
+			"run_stat_result",
+			"calstat_handler",
+			"run_stat_result",
+			"raw_dictionary",
+			"preprocess_dictionary",
+			"read_bin_trees",
+			"run_analysis",
+			"vocab",
+			"tree_result.npy",
+			"shelve",
+			"run_batch",
+			"preprocess_dictionary",
+			"shelve",
+			"shelf",
+			"shelve",
+			"vocab.db",
+			"vocab",
+			"vocab.db",
+			"read_bin_trees",
+			"get_phrases_helper",
+			"get_phrase_helper",
+			"arg",
+			"kl_divergence.npz",
+			"clone",
+			" _fit_and_score",
+			"numpy",
+			"VocabularyDict",
+			"Vari",
+			"mmap",
+			"vocab",
+			"pretrain_loc",
+			"Keyed",
+			"np",
+			"Keyed",
+			"KeyedVectors",
+			"preload",
+			"Keyed",
+			"Key",
+			"KeyedVectors",
+			"KeyedVector",
+			"pretrain",
+			"GridSearchCV",
+			"spacy_vectorizer",
+			"pretrain",
+			"weight",
+			"sample_w",
+			"data_dir",
+			"spacy",
+			"pretrain",
+			"copyreg",
+			"run_sample_weight_cv",
+			"run_weight_model",
+			"scoring",
+			"construct_weight_m",
+			"construct_nai",
+			"calibrat",
+			"construct_weight_model",
+			"construct_weight_model(",
+			"calibrat",
+			"calibrated",
+			"construct_ada",
+			"run_sample_w",
+			"sigmoid",
+			"groupby",
+			"construct_weight_model",
+			"Group",
+			"chain",
+			"control_searcher",
+			"construct_score",
+			"predict",
+			"make_scorer",
+			"construct_",
+			"group_fit",
+			"compute_wei\\",
+			"construct_score",
+			"construct_ada",
+			"weight_cv",
+			"cv",
+			"weight",
+			"strategy",
+			"compute",
+			"compute_weights",
+			"compute_",
+			"preprocess_data",
+			"transform",
+			"run_",
+			"weight",
+			"construct_weight",
+			"construct_weight_model",
+			"construct_model",
+			"weight_by_size"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"",
+			".",
+			"from .",
+			"from ",
+			"from .",
+			"from symlearn.blocks",
+			"from symlearn.fuel",
+			"from symlearn.blocks",
+			"from symlearn.blocks.",
+			"from symlearn.fuel."
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 5,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "scripts/exec_helper.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6188,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1752,
+								1752
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 476.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "scripts/stanfordSentimentTreebank.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6915,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								630,
+								630
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "scripts/run_recursnn_drae.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 14128,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								12037,
+								12037
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 4047.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "symlearn/utils/wordproc.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 12467,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								939,
+								939
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 476.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "symlearn/recursnn/recursnn_rae.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 31036,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								600,
+								600
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "symlearn/blocks/bricks/base.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 34638,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								645,
+								645
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 9384,
+						"regions":
+						{
+							"match":
+							{
+								"flags": 112,
+								"regions":
+								[
+									[
+										640,
+										651
+									],
+									[
+										979,
+										990
+									],
+									[
+										1319,
+										1330
+									],
+									[
+										1367,
+										1378
+									],
+									[
+										1606,
+										1617
+									],
+									[
+										3640,
+										3654
+									],
+									[
+										3928,
+										3942
+									],
+									[
+										4351,
+										4365
+									],
+									[
+										4540,
+										4554
+									],
+									[
+										5011,
+										5025
+									],
+									[
+										5447,
+										5461
+									],
+									[
+										5636,
+										5650
+									],
+									[
+										6058,
+										6072
+									],
+									[
+										6080,
+										6094
+									],
+									[
+										6281,
+										6295
+									],
+									[
+										6526,
+										6540
+									],
+									[
+										6640,
+										6654
+									],
+									[
+										6764,
+										6778
+									],
+									[
+										7021,
+										7035
+									],
+									[
+										7341,
+										7355
+									],
+									[
+										7357,
+										7371
+									],
+									[
+										7519,
+										7533
+									],
+									[
+										7572,
+										7586
+									],
+									[
+										7982,
+										7996
+									],
+									[
+										8219,
+										8233
+									],
+									[
+										8464,
+										8478
+									],
+									[
+										8578,
+										8592
+									],
+									[
+										8702,
+										8716
+									],
+									[
+										8959,
+										8973
+									],
+									[
+										9196,
+										9210
+									]
+								],
+								"scope": ""
+							}
+						},
+						"selection":
+						[
+							[
+								5370,
+								5370
+							]
+						],
+						"settings":
+						{
+							"detect_indentation": false,
+							"line_numbers": false,
+							"output_tag": 2,
+							"result_base_dir": "",
+							"result_file_regex": "^([^ \t].*):$",
+							"result_line_regex": "^ +([0-9]+):",
+							"scroll_past_end": true,
+							"syntax": "Packages/Default/Find Results.hidden-tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1422.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "symlearn/utils/__init__.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2072,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								436,
+								436
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "symlearn/recursnn/recursnn_train.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 8767,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1089,
+								1089
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "symlearn/utils/base.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 7675,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								7336,
+								7336
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2097.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "scripts/run_shelter_comp.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 30650,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								26419,
+								26419
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 9040.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "scripts/run_naive_bayes.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 67306,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1151,
+								1151
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 9,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 38.0
+	},
+	"input":
+	{
+		"height": 36.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.SublimeLinter":
+	{
+		"height": 0.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "Symlearn.sublime-project",
+	"replace":
+	{
+		"height": 70.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"data",
+				"data/tree_ada_gnb_multi.model"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 392.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 769.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 274.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

@@ -15,6 +15,7 @@ from ..graph import add_annotation, Annotation
 from ..roles import add_role, PARAMETER, INPUT, OUTPUT
 from ..utils import dict_union, pack, repr_attrs, reraise_as, unpack
 from ..utils.containers import AnnotatingList
+from copy import deepcopy
 
 BRICK_DELIMITER = '/'
 
@@ -969,7 +970,10 @@ def _variable_name(brick_name, application_name, name):
 
 def copy_and_tag(variable, brick, call, role, application_name, name):
     """Helper method to copy a variable and annotate it."""
-    copy = variable.copy()
+    if hasattr(variable, 'copy'):
+        copy = variable.copy()
+    else:
+        copy = deepcopy(variable)
     # Theano name
     copy.name = _variable_name(brick.name, application_name, name)
     add_annotation(copy, brick)

@@ -18,7 +18,7 @@ from itertools import groupby
 from operator import attrgetter,itemgetter
 from collections import OrderedDict, deque
 
-from symlearn.utils.WordNormalizer import WordNormalizer, WordNormalizerWrapper
+from symlearn.utils.wordproc import WordNormalizer, WordNormalizerWrapper
 from . import recursnn_helper
 
 import sklearn

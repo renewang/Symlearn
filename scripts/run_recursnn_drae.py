@@ -292,8 +292,8 @@ if __name__ == '__main__':
         raw_data = numpy.asarray(tree_strs[:nrows])
 
         # preprocess
-        preproc = construct_preproc(random_state=cmd_args.seed,
-                pretrain_loc=cmd_args.preproc)
+        preproc = load_preproc(pretrain_loc=cmd_args.preproc)                                             
+                                              
         train_features, train_targets = preprocess(preproc, (raw_data[train],),
                 sorter__is_order=True)
         valid_features, valid_targets = preprocess(preproc, (raw_data[valid],),

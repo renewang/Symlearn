@@ -1,0 +1,10 @@
+{
+	"folders":
+	[
+		{
+			"path": "/Users/renewang/Documents/workspace/Kaggle/symlearn/Symlearn",
+			"folder_exclude_patterns": ["*.egg-info", "src", "data"],
+
+		}
+	]
+}

@@ -193,7 +193,7 @@ def fit_transform(inst, X, y=None, **fit_param):
     """
     current patch to solve FunctionTransformer problem
     """
-    from . import WordIndexer
+    from .wordproc import WordIndexer
     if isinstance(inst.func, WordIndexer):
         return(inst.transform(X, y, **fit_param))
     elif fit_param.get('is_order', None):

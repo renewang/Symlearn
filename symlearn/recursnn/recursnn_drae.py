@@ -34,12 +34,12 @@ from . import (recursnn_helper, CompilerABC, SharedAccess, timethis)
 from .recursive import PenalizedLinear
 from .recursnn_rae import RecursiveAutoEncoder
 from .fuel_extensions import Stacking
+from .. import  theano
+from .. import blocks
 
 import logging
 import numpy as np
 import scipy as sp
-import theano
-import blocks
 import types
 import os
 

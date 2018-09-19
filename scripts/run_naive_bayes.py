@@ -1,5 +1,5 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.model_selection import (StratifiedKFold, GroupShuffleSplit, ShuffleSplit,
+from sklearn.model_selection import (StratifiedKFold, GroupKFold, ShuffleSplit,
         GridSearchCV, learning_curve, ParameterGrid, PredefinedSplit, StratifiedShuffleSplit)
 from sklearn.decomposition import TruncatedSVD
 from sklearn.naive_bayes import GaussianNB, MultinomialNB
@@ -19,16 +19,14 @@ from sklearn.multiclass import OneVsRestClassifier
 from sklearn.base import BaseEstimator
 from contextlib import contextmanager
 from functools import partial
-from itertools import accumulate, chain
 from collections import OrderedDict, deque
-from stanfordSentimentTreebank import create_vocab_variants, compute_weights
+from stanfordSentimentTreebank import create_vocab_variants
 from symlearn.utils import (VocabularyDict, count_vectorizer, construct_score, 
     inspect_and_bind)
-from symlearn.utils.WordNormalizer import spacy_vectorizer
+from gensim.models.keyedvectors import KeyedVectors
 from calibration import CalibratedClassifierCV, CalibratedClassifier
-#from boost import WeightAdaBoostClassifier
-import gensim.models.keyedvectors as kv
-from exec_helper import patch_pickled_preproc
+from exec_helper import (patch_pickled_preproc, data_dir, load_from, 
+                         LanguageModelPickler)
 
 import h5py
 import joblib
@@ -36,7 +34,6 @@ import pandas
 import numpy
 import scipy
 import cython
-import spacy
 
 import json
 import pathlib
@@ -47,73 +44,20 @@ import argparse
 import time
 import os
 import gc
-import mmap
 
 
 if cython.compiled:
     from _aux import (transform_features, group_fit, labels_to_attributes, 
-        process_joint_features, phrase_only_transformation)       
+        process_joint_features)       
 else:
     from aux import (transform_features, group_fit, labels_to_attributes,
-        process_joint_features, phrase_only_transformation)
-
-major,_ ,_ = list(map(int, spacy.__version__.split('.')))
-if major > 1:
-    from spacy.lang.en import English
-else:
-    from spacy.en import English
+        process_joint_features)
 
 
 FORMAT='%(asctime)s:%(levelname)s:%(threadName)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s'
 logging.captureWarnings(True)
 logging.basicConfig(format=FORMAT, datefmt='%m/%d/%Y %I:%M:%S %p',
         level=logging.INFO, handlers=[logging.StreamHandler()])
-
-data_dir = os.path.join(os.getenv('DATADIR', default='..'), 'data')
- 
-
-class LanguageModelPickler(NumpyPickler):
-
-    model_name = 'en_vectors_glove_md' # hard-coded for now
-
-    def persistent_id(self, obj):
-        if isinstance(obj, English):
-            return (obj.__class__, str(obj.path))
-        elif isinstance(obj, spacy.vocab.Vocab) :
-            return (obj.__class__, self.model_name)
-        else:
-            return None    
-
-    def save(self, obj, save_persistent_id=False):
-        return super(LanguageModelPickler, self).save(obj)
-
-
-def pickle_spaCy(spaCy_inst):
-    # need to manually add those attributes rerquired when the instance is constructed
-    if isinstance(spaCy_inst, spacy.tokens.span.Span):
-        return spaCy_inst.__class__, \
-            (spaCy_inst.doc, spaCy_inst.start, 
-             spaCy_inst.end, spaCy_inst.label, 
-             spaCy_inst.vector, spaCy_inst.vector_norm)
-    elif isinstance(spaCy_inst, spacy.tokens.doc.Doc):
-        return spaCy_inst.__class__, \
-            (spaCy_inst.vocab, spaCy_inst.to_bytes())
-
-
-def unpickle_spaCy(cls, *args):
-    if cls == spacy.tokens.span.Span:
-        return cls(*args)
-    elif cls == spacy.tokens.doc.Doc:
-        # the first argument should be vocab
-        assert(isinstance(args[0], spacy.vocab.Vocab))
-        assert(isinstance(args[1], bytes))
-        return cls(args[0]).from_bytes(args[1])
-
-
-# must be declared in the global scope
-#import copyreg
-#copyreg.pickle(spacy.tokens.span.Span, pickle_spaCy, unpickle_spaCy)
-#copyreg.pickle(spacy.tokens.doc.Doc, pickle_spaCy, unpickle_spaCy)
 
 
 class DummyProxy(DummyClassifier):
@@ -300,13 +244,8 @@ def construct_adaboost(base_estimator, **kwargs):
         # only need classifier
         params['base_estimator'] = params['base_estimator'].steps[-1][-1]
     params.update(kwargs)
-    if 'weight_init' in kwargs:
-        #param_ba = inspect_and_bind(WeightAdaBoostClassifier, **params)
-        #estimator = WeightAdaBoostClassifier(*param_ba.args, **param_ba.kwargs)
-        pass
-    else:
-        param_ba = inspect_and_bind(AdaBoostClassifier, **params)
-        estimator = AdaBoostClassifier(*param_ba.args, **param_ba.kwargs)
+    param_ba = inspect_and_bind(AdaBoostClassifier, **params)
+    estimator = AdaBoostClassifier(*param_ba.args, **param_ba.kwargs)
     return estimator
 
 
@@ -332,11 +271,8 @@ def construct_ovr(base_estimator, **kwargs):
 
     params.update(kwargs)
     param_ba = inspect_and_bind(CalibratedClassifierCV, **params)
-    if steps:
-        estimator = Pipeline(steps + 
-                [('classifier', CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs))])
-    else:
-        estimator = CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs)
+    estimator = Pipeline(steps + 
+            [('classifier', CalibratedClassifierCV(*param_ba.args, **param_ba.kwargs))])
     return estimator
 
 
@@ -358,23 +294,8 @@ def construct_scaler(base_estimator, preproc=None, **kwargs):
     return estimator
 
 
-def load_from(load_module, load_model):
     """
-    Parameters
-    ----------
-    @param load_module:  string
-        used to specify which module should be used to load the pre-trained model
-        currently allowed: gensim and spacy
-    @param load_model: string
-        used to specify which model should be loaded from the module: commonly used
-        are word2vec and glove
     """
-    preproc = None
-    if load_module == 'spacy':
-        preproc = Pipeline(steps=[
-            ('transformer', FunctionTransformer(
-                spacy_vectorizer(load_model), validate=False))])
-    return None, preproc
 
 
 def train_test_split(n_samples, **kwargs):
@@ -495,10 +416,6 @@ def preload_helper(csv_file, pretrain_loc=None, n_rows=-1, **kwargs):
 
     return preproc, (train_features, targets[train]), \
         (valid_features, targets[valid]), (test_features, targets[test])
-
-
-def simple_split(x):
-    return x.split() 
 
 
 def construct_weight_model(preproc, predictor_maker, max_level, cvkwargs, gridkwargs, 

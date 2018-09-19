@@ -32,15 +32,15 @@ from . import (split_params, inspect_and_bind, CompilerABC, SharedAccess,
                       timethis)
 from functools import singledispatch, partial, wraps, update_wrapper
 from copy import copy
+from symlearn import blocks
 
 import time
 import types
 import logging
-import theano
-import theano.sparse
+from .. import theano
+from .. import sparse
 import numpy
 import scipy
-import blocks
 import weakref
 import inspect
 import os
@@ -667,7 +667,7 @@ class RecursiveAutoEncoder(CompilerABC, BaseEstimator, TransformerMixin):
         brick = TreeBrickWrapper([embedding.apply, rnn.apply],
                 name='treeop_wrapper')
 
-        x = theano.sparse.csr_matrix('x', dtype='int32')
+        x = sparse.csr_matrix('x', dtype='int32')
         add_role(x, blocks.roles.INPUT)
         
         if not brick.initialized:

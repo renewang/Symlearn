@@ -2,13 +2,50 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.pipeline import Pipeline
-from symlearn.utils import (VocabularyDict, count_vectorizer, construct_score, 
-    inspect_and_bind)
+from sklearn.preprocessing import FunctionTransformer, StandardScaler, label_binarize
 from gensim.sklearn_api.w2vmodel import W2VTransformer
 from joblib.numpy_pickle import NumpyUnpickler, NumpyPickler
 
+from symlearn.utils import (VocabularyDict, count_vectorizer, construct_score, 
+                           inspect_and_bind, spacy_vectorizer)
+
+
 import os
 import joblib
+import pathlib
+import numpy
+import mmap
+import pickle
+import spacy
+import logging
+
+import gensim.models.keyedvectors as kv
+
+
+data_dir = os.path.join(os.getenv('DATADIR', default='..'), 'data')
+
+
+def simple_split(x):
+    return x.split() 
+
+
+def load_from(load_module, load_model):
+    """
+    Parameters
+    ----------
+    @param load_module:  string
+        used to specify which module should be used to load the pre-trained model
+        currently allowed: gensim and spacy
+    @param load_model: string
+        used to specify which model should be loaded from the module: commonly used
+        are word2vec and glove
+    """
+    preproc = None
+    if load_module == 'spacy':
+        preproc = Pipeline(steps=[
+            ('transformer', FunctionTransformer(
+                spacy_vectorizer(load_model), validate=False))])
+    return None, preproc
 
 
 def construct_preprocessor(**kwargs):
@@ -52,32 +89,7 @@ def load_from_word2vec(pretrain_loc, vocab):
     original word2vec is quite big and contain a lot of extra vocabulary which is not contained 
     within current training corpus 
     """
-    filename = pretrain_loc.as_posix()
-    with open(filename, 'r+b') as fp:
-        mmap_fp = mmap.mmap(fp.fileno(), 0)
-        raw_w2v = kv.KeyedVectors.load_word2vec_format(mmap_fp, 
-                    binary=True, limit=10000)
-    proc_w2v = kv.Word2VecKeyedVectors(raw_w2v.vector_size)
-    proc_w2v.vectors = numpy.zeros((len(vocab), raw_w2v.vector_size), 
-        dtype=raw_w2v.vectors.dtype)
-    # construct word<->freq dict
-    proc_w2v.build_vocab_from_freq()
-    vectorizer= W2VTransformer().fit(X=None)
-    vectorizer.gensim_model.wv = word2vec
-    n_components = vectorizer.gensim_model.wv.vector_size
-    # adding extra one column for oov
-    vectorizer.gensim_model.wv.vectors = numpy.vstack(
-        [vectorizer.gensim_model.wv.vectors, 
-        numpy.zeros(n_components, dtype=vectorizer.gensim_model.wv.vectors.dtype)])
-    # update word2vec.vocab
-    new_vocab = dict([(v, word2vec.vocab[k]) if k in word2vec.vocab else 
-        (v, kv.Vocab(index=vocab[k], count=None)) for k, v in vocab.items()])
-    word2vec.vocab = new_vocab
-    pretrain_loc = pretrain_loc.parent.joinpath('word2vec.bin')
-    word2vec.save(pretrain_loc.as_posix())
-    word2vec = kv.KeyedVectors.load(pretrain_loc.as_posix(), mmap='r')
-    
-    return vectorizer, track_index
+    pass
 
 
 class RestrictedUnpickler(NumpyUnpickler):
@@ -122,6 +134,22 @@ class RestrictedUnpickler(NumpyUnpickler):
             return model
 
 
+class LanguageModelPickler(NumpyPickler):
+
+    model_name = 'en_vectors_glove_md' # hard-coded for now
+
+    def persistent_id(self, obj):
+        if isinstance(obj, spacy.en.English):
+            return (obj.__class__, str(obj.path))
+        elif isinstance(obj, spacy.vocab.Vocab) :
+            return (obj.__class__, self.model_name)
+        else:
+            return None    
+
+    def save(self, obj, save_persistent_id=False):
+        return super(LanguageModelPickler, self).save(obj)
+
+
 def patch_pickled_preproc(pretrain_loc):
     if os.path.exists(os.path.join(data_dir, pretrain_loc)):
         pretrain_loc = pathlib.Path(os.path.join(data_dir, pretrain_loc))
@@ -146,4 +174,5 @@ def patch_pickled_preproc(pretrain_loc):
         preproc = construct_preprocessor(vocabulary=vocab)
         n_components = preproc.named_steps['decomposer'].n_components
     return preproc
+
 
