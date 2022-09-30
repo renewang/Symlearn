@@ -5,7 +5,7 @@ nltk==3.2
 pandas==0.19.1
 Cython==0.25.2
 h5py==2.7.0
-joblib==0.10.0
+joblib==1.2.0
 ## The following requirements were added by pip freeze:
 boto==2.47.0
 bz2file==0.98
